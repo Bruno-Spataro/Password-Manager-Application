@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mis Contraseñas</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔒</text></svg>">
+<!-- Esto es lo que permite "instalar" la app (ícono propio, sin barra de
+     navegador, funciona sin internet). No afecta en nada abrirla con doble
+     clic como archivo local: ahí el navegador simplemente ignora estas
+     líneas porque no puede instalar nada desde file://. -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6366f1">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Contraseñas">
+<style>
+  :root{
+    --bg:#eef0f8; --bg2:#e6e9f5;
+    --surface:#ffffff; --surface-2:#f7f8fc;
+    --text:#1f2430; --muted:#6b7280; --faint:#9aa3b2;
+    --primary:#6366f1; --primary-d:#4f46e5; --primary-soft:#eef0ff;
+    --border:#e6e8f0; --border-2:#dfe2ee;
+    --danger:#ef4444; --danger-soft:#fef2f2;
+    --success:#10b981; --warn:#f59e0b;
+    --shadow:0 1px 3px rgba(20,24,40,.06), 0 8px 24px rgba(20,24,40,.06);
+    --shadow-lg:0 12px 40px rgba(20,24,40,.18);
+    --radius:16px; --radius-sm:10px;
+  }
+  [data-theme="dark"]{
+    --bg:#0e1016; --bg2:#0b0d12;
+    --surface:#181b24; --surface-2:#1f232f;
+    --text:#e7e9ee; --muted:#9aa3b2; --faint:#6b7280;
+    --primary:#818cf8; --primary-d:#6366f1; --primary-soft:#23263a;
+    --border:#262a36; --border-2:#2d323f;
+    --danger:#f87171; --danger-soft:#2a1c1f;
+    --success:#34d399; --warn:#fbbf24;
+    --shadow:0 1px 3px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.3);
+    --shadow-lg:0 12px 40px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(180deg,var(--bg),var(--bg2));
+    color:var(--text); min-height:100vh; line-height:1.45; -webkit-font-smoothing:antialiased;
+  }
+  header{position:sticky; top:0; z-index:30; background:var(--surface); border-bottom:1px solid var(--border)}
+  .header-inner{max-width:1180px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap}
+  .brand{display:flex; align-items:center; gap:11px; font-weight:700; font-size:19px; letter-spacing:-.2px}
+  .brand .logo{width:38px; height:38px; border-radius:11px; background:linear-gradient(135deg,var(--primary),var(--primary-d)); display:grid; place-items:center; color:#fff; box-shadow:0 4px 12px rgba(99,102,241,.4)}
+  .brand small{display:block; font-weight:500; font-size:11.5px; color:var(--muted)}
+  .search{flex:1 1 260px; min-width:200px; position:relative; display:flex; align-items:center}
+  .search svg{position:absolute; left:13px; color:var(--faint); pointer-events:none}
+  .search input{width:100%; padding:11px 14px 11px 40px; border:1px solid var(--border); border-radius:12px; background:var(--surface-2); color:var(--text); font-size:14.5px; outline:none; transition:.15s}
+  .search input:focus{border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-soft)}
+  .search .clear{position:absolute; top:50%; right:10px; transform:translateY(-50%); line-height:0; border:none; background:none; cursor:pointer; color:var(--faint); padding:5px; border-radius:7px; display:none}
+  .search .clear:hover{background:var(--border); color:var(--text)}
+  .header-actions{display:flex; align-items:center; gap:9px}
+  .btn{display:inline-flex; align-items:center; gap:7px; cursor:pointer; border:1px solid transparent; border-radius:11px; padding:10px 15px; font-size:14px; font-weight:600; font-family:inherit; white-space:nowrap; transition:.15s}
+  .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.6; cursor:default}
+  .btn.primary{background:var(--primary); color:#fff; box-shadow:0 4px 12px rgba(99,102,241,.32)}
+  .btn.primary:hover{background:var(--primary-d)}
+  .btn.ghost{background:var(--surface-2); color:var(--text); border-color:var(--border)}
+  .btn.ghost:hover{background:var(--border)}
+  .btn.danger{background:var(--danger); color:#fff}
+  .btn.sm{padding:7px 12px; font-size:13px; border-radius:9px}
+  .icon-btn{display:inline-grid; place-items:center; cursor:pointer; width:34px; height:34px; border-radius:9px; border:1px solid transparent; background:transparent; color:var(--muted); transition:.15s}
+  .icon-btn:hover{background:var(--surface-2); color:var(--text)}
+  .icon-btn.sm{width:30px; height:30px}
+  .icon-btn.danger:hover{background:var(--danger-soft); color:var(--danger)}
+  .icon-btn.star.on{color:var(--warn)}
+  .icon-btn.star.on svg{fill:var(--warn)}
+
+  .banner{max-width:1180px; margin:14px auto 0; padding:0 20px}
+  .banner-inner{display:flex; align-items:center; gap:12px; background:var(--primary-soft); border:1px solid var(--border); border-radius:12px; padding:12px 15px; font-size:13.5px; color:var(--text)}
+  .banner-inner svg{color:var(--primary); flex-shrink:0}
+  .banner-inner .grow{flex:1}
+
+  .tabs-wrap{max-width:1180px; margin:0 auto; padding:18px 20px 0}
+  .tabs{display:inline-flex; gap:4px; background:var(--surface); padding:5px; border-radius:13px; border:1px solid var(--border); box-shadow:var(--shadow); flex-wrap:wrap}
+  .tab{display:inline-flex; align-items:center; gap:8px; cursor:pointer; border:none; background:none; font-family:inherit; font-size:14px; font-weight:600; color:var(--muted); padding:9px 16px; border-radius:9px; transition:.15s}
+  .tab:hover{color:var(--text)}
+  .tab.active{background:var(--primary); color:#fff; box-shadow:0 3px 10px rgba(99,102,241,.3)}
+  .tab .count{font-size:12px; font-weight:700; min-width:20px; height:20px; padding:0 6px; border-radius:20px; display:inline-grid; place-items:center; background:var(--surface-2); color:var(--muted)}
+  .tab.active .count{background:rgba(255,255,255,.25); color:#fff}
+
+  main{max-width:1180px; margin:0 auto; padding:18px 20px 60px}
+  /* Orden: en pantallas normales es una fila de chips arriba de las tarjetas.
+     En pantallas bien anchas (donde sobra espacio a los costados del
+     contenido centrado) se convierte en una columna fija pegada al margen
+     izquierdo, aprovechando ese espacio que si no queda vacío. */
+  .side-sort{max-width:1180px; margin:0 auto 14px; padding:0 20px; display:flex; flex-wrap:wrap; align-items:center; gap:8px}
+  .side-sort-label{font-size:12px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:.5px; margin-right:2px; flex-shrink:0}
+  .sort-opt{cursor:pointer; border:1px solid var(--border); background:var(--surface); color:var(--muted); font-family:inherit; font-size:12.5px; font-weight:600; padding:7px 12px; border-radius:20px; transition:.15s}
+  .sort-opt:hover{color:var(--text); border-color:var(--primary)}
+  .sort-opt.active{background:var(--primary); color:#fff; border-color:var(--primary)}
+  @media (min-width:1600px){
+    .side-sort{position:fixed; top:110px; left:calc(50% - 770px); width:160px; max-width:160px; margin:0; padding:0; flex-direction:column; align-items:stretch; gap:6px}
+    .side-sort-label{margin:0 0 6px 4px}
+    .sort-opt{text-align:left; border-radius:9px; padding:9px 12px}
+  }
+  .health-panel{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px}
+  .health-stat{cursor:pointer; border:1px solid var(--border); background:var(--surface); color:var(--text); font-family:inherit; font-size:13.5px; font-weight:600; padding:9px 14px; border-radius:12px; transition:.15s; display:inline-flex; align-items:center; gap:7px}
+  .health-stat:hover:not(:disabled){border-color:var(--primary)}
+  .health-stat.active{background:var(--primary); color:#fff; border-color:var(--primary)}
+  .health-stat .n{font-size:15px; font-weight:800}
+  .health-stat:disabled{opacity:.5; cursor:default}
+  .cat-bar{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px}
+  .cat-bar:empty{display:none}
+  .chip{cursor:pointer; border:1px solid var(--border); background:var(--surface); color:var(--muted); font-family:inherit; font-size:13px; font-weight:600; padding:7px 13px; border-radius:20px; transition:.15s; display:inline-flex; align-items:center; gap:6px}
+  .chip:hover{color:var(--text); border-color:var(--primary)}
+  .chip.active{background:var(--primary); color:#fff; border-color:var(--primary)}
+  /* layout tipo masonry: columnas flex, cada una apila sus tarjetas sin huecos por filas */
+  .grid{display:flex; gap:18px; align-items:flex-start}
+  .grid-col{flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:18px}
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column; transition:box-shadow .2s, transform .2s}
+  .card:hover{box-shadow:var(--shadow-lg); transform:translateY(-2px)}
+  /* vista lista: una sola columna, prolija, sin cuadros flotando por todos lados */
+  .grid.list-mode{gap:8px}
+  .grid.list-mode .grid-col{gap:8px}
+  .grid.list-mode .card{border-radius:10px; box-shadow:none}
+  .grid.list-mode .card:hover{transform:none; box-shadow:var(--shadow)}
+  /* arrastrar para reordenar */
+  .drag-handle{display:inline-grid; place-items:center; width:26px; height:30px; border:none; background:transparent; color:var(--faint); cursor:grab; flex-shrink:0; border-radius:7px; padding:0}
+  .drag-handle:hover{color:var(--text); background:var(--surface-2)}
+  .drag-handle:active{cursor:grabbing}
+  .acc-grip{width:22px; height:26px}
+  .card.dragging,.account.dragging{opacity:.4}
+  .card.drop-before{box-shadow:inset 0 4px 0 0 var(--primary)}
+  .card.drop-after{box-shadow:inset 0 -4px 0 0 var(--primary)}
+  .account.drop-before{box-shadow:inset 0 3px 0 0 var(--primary)}
+  .account.drop-after{box-shadow:inset 0 -3px 0 0 var(--primary)}
+  .trash-bar{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:16px; padding:11px 15px; background:var(--danger-soft); border:1px solid var(--border); border-radius:12px}
+  .trash-bar-info{font-size:13px; color:var(--muted)}
+  .card-head{display:flex; align-items:flex-start; gap:3px; padding:11px 9px 11px 11px; border-bottom:1px solid var(--border); background:linear-gradient(180deg,var(--surface-2),var(--surface))}
+  .card.collapsed .card-head{border-bottom:none}
+  .card-titlecol{flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; padding-top:4px}
+  .card-title{margin:0; font-size:16.5px; font-weight:700; letter-spacing:-.2px; line-height:1.2; overflow-wrap:break-word; word-break:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+  .card-tags{display:flex; flex-wrap:wrap; gap:6px}
+  .card-tags:empty{display:none}
+  .card-cat{font-size:11px; font-weight:600; color:var(--primary); background:var(--primary-soft); padding:2px 8px; border-radius:20px; white-space:nowrap}
+  .row-actions{display:flex; gap:1px; flex-shrink:0; align-self:flex-start}
+  .parent-badge{font-size:11px; font-weight:600; color:var(--muted); background:var(--surface-2); border:1px solid var(--border); padding:2px 8px; border-radius:20px; white-space:nowrap}
+  .chev svg{transition:transform .28s cubic-bezier(.4,0,.2,1)}
+  .card.collapsed .chev svg{transform:rotate(-90deg)}
+  /* cuerpo plegable: anima la altura con el truco de grid-template-rows 1fr<->0fr */
+  .card-body{display:grid; grid-template-rows:1fr; transition:grid-template-rows .3s cubic-bezier(.4,0,.2,1)}
+  .card.collapsed .card-body{grid-template-rows:0fr}
+  .card-body-inner{overflow:hidden; min-height:0; opacity:1; transition:opacity .26s ease}
+  .card.collapsed .card-body-inner{opacity:0}
+  .collapsed-summary{display:none; align-items:center; gap:7px; cursor:pointer; padding:12px 14px; color:var(--muted); font-size:13.5px; font-weight:600}
+  .card.collapsed .collapsed-summary{display:flex}
+  .collapsed-summary svg{flex-shrink:0}
+  .accounts{padding:8px; display:flex; flex-direction:column; gap:8px}
+  .account{background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 13px}
+  .account.editing{background:var(--surface); border-color:var(--primary)}
+  .account-head{display:flex; align-items:center; gap:8px; min-height:30px}
+  .field-label-row{display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:30px}
+  .field-label-row .account-actions{flex-shrink:0}
+  .account>*:first-child{margin-top:0}
+  .account-sub{font-size:13.5px; font-weight:700; color:var(--primary); flex:1; word-break:break-word}
+  .account-sub.spacer{color:transparent}
+  .account-actions{display:flex; gap:1px; flex-shrink:0}
+  .account-badges{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px}
+  .badge{font-size:11px; font-weight:600; padding:3px 8px; border-radius:20px; display:inline-flex; align-items:center; gap:4px; max-width:100%}
+  .badge.reuse{max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:help}
+  .badge.reuse{background:var(--danger-soft); color:var(--danger)}
+  .badge.old{background:rgba(245,158,11,.12); color:var(--warn)}
+  .badge.weak{background:var(--danger-soft); color:var(--danger)}
+  .field{margin-top:8px}
+  .field-label{font-size:11px; font-weight:600; color:var(--faint); text-transform:uppercase; letter-spacing:.5px}
+  .value-row{display:flex; align-items:center; gap:6px; margin-top:2px}
+  .value{font-size:14.5px; flex:1; word-break:break-all}
+  .value.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; letter-spacing:1px}
+  .value.extra{white-space:pre-wrap; font-size:13.5px; color:var(--muted); margin:3px 0 0; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:8px 10px}
+  .muted{color:var(--faint)}
+  .empty-accounts{padding:14px; text-align:center; color:var(--faint); font-size:13.5px}
+  .add-account{margin:0 8px 10px; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer; border:1px dashed var(--border-2); background:transparent; color:var(--muted); font-family:inherit; font-size:13.5px; font-weight:600; padding:10px; border-radius:var(--radius-sm); transition:.15s}
+  .add-account:hover{border-color:var(--primary); color:var(--primary); background:var(--primary-soft)}
+  .totp{display:flex; align-items:center; gap:8px; margin-top:2px}
+  .totp-digits{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:19px; font-weight:700; letter-spacing:2px; color:var(--text)}
+  .totp-secs{font-size:12px; font-weight:600; color:var(--muted); min-width:32px}
+
+  .ie{display:flex; flex-direction:column; gap:9px}
+  .f{display:flex; flex-direction:column; gap:4px; font-size:12px; font-weight:600; color:var(--muted)}
+  .f .opt{color:var(--faint); font-weight:500}
+  .f input, .f textarea, .modal-account input, .modal-account textarea, .modal-body>label.f input{font-family:inherit; font-size:14px; color:var(--text); border:1px solid var(--border); border-radius:9px; padding:9px 11px; background:var(--surface); outline:none; transition:.15s; width:100%}
+  .f input:focus, .f textarea:focus, .modal-account input:focus, .modal-account textarea:focus{border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-soft)}
+  .f textarea, .modal-account textarea{resize:vertical; min-height:42px}
+  .pass-input{display:flex; align-items:center; gap:5px}
+  .pass-input input{flex:1}
+  .pass-input .icon-btn{border:1px solid var(--border); flex-shrink:0}
+  .ie-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:2px}
+  .strength{height:5px; border-radius:3px; background:var(--border); overflow:hidden; margin-top:6px}
+  .strength-fill{display:block; height:100%; width:0; transition:width .2s, background .2s}
+  .strength-label{font-size:11px; font-weight:600; margin-top:3px; min-height:14px}
+
+  .cf-list{display:flex; flex-direction:column; gap:8px}
+  .cf-row{display:grid; grid-template-columns:1fr 1fr auto auto; gap:6px; align-items:center}
+  .cf-row input[type=text]{padding:8px 10px}
+  .cf-secret{display:flex; align-items:center; gap:4px; font-size:11px; color:var(--muted); white-space:nowrap; cursor:pointer}
+  .cf-add{display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; border:1px dashed var(--border-2); background:transparent; color:var(--muted); font-family:inherit; font-size:12.5px; font-weight:600; padding:8px; border-radius:9px; transition:.15s}
+  .cf-add:hover{border-color:var(--primary); color:var(--primary)}
+
+  .empty{flex:1 1 100%; width:100%; text-align:center; padding:70px 20px; color:var(--muted)}
+  .empty .ic{width:72px; height:72px; margin:0 auto 18px; border-radius:20px; background:var(--surface); border:1px solid var(--border); display:grid; place-items:center; color:var(--faint); box-shadow:var(--shadow)}
+  .empty h3{margin:0 0 6px; font-size:18px; color:var(--text)}
+  .empty p{margin:0; font-size:14.5px}
+
+  .overlay{position:fixed; inset:0; z-index:50; background:rgba(15,17,23,.55); backdrop-filter:blur(3px); display:none; align-items:flex-start; justify-content:center; padding:30px 16px; overflow-y:auto}
+  .overlay.open{display:flex}
+  .modal{background:var(--surface); border:1px solid var(--border); border-radius:20px; width:100%; max-width:560px; box-shadow:var(--shadow-lg); margin:auto 0; animation:pop .18s ease}
+  @keyframes pop{from{opacity:0; transform:translateY(10px) scale(.98)} to{opacity:1; transform:none}}
+  .modal-head{display:flex; align-items:center; justify-content:space-between; padding:18px 20px; border-bottom:1px solid var(--border)}
+  .modal-head h2{margin:0; font-size:18px; font-weight:700}
+  .modal-body{padding:18px 20px; max-height:64vh; overflow-y:auto}
+  .modal-body>label.f{margin-bottom:14px}
+  .accounts-editor-label{font-size:12px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:.5px; margin:6px 0 10px}
+  .modal-account{background:var(--surface-2); border:1px solid var(--border); border-radius:12px; padding:13px; margin-bottom:11px; display:flex; flex-direction:column; gap:10px}
+  .modal-account-head{display:flex; align-items:center; justify-content:space-between}
+  .ma-label{font-size:12.5px; font-weight:700; color:var(--primary)}
+  .sub-label{font-size:11px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:.4px; margin-top:2px}
+  .add-block-btn{width:100%; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer; border:1px dashed var(--border-2); background:transparent; color:var(--muted); font-family:inherit; font-size:13.5px; font-weight:600; padding:11px; border-radius:11px; transition:.15s}
+  .add-block-btn:hover{border-color:var(--primary); color:var(--primary); background:var(--primary-soft)}
+  .modal-foot{display:flex; justify-content:flex-end; gap:9px; padding:15px 20px; border-top:1px solid var(--border)}
+  .settings-section h3{margin:0 0 4px; font-size:15px; font-weight:700}
+  .settings-section p{margin:0 0 16px; font-size:13px; color:var(--muted)}
+  .settings-section label.f{margin-bottom:13px}
+  .settings-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; border-top:1px solid var(--border); font-size:13.5px}
+  .settings-row .lbl{font-weight:600}
+  .settings-row .desc{font-size:12px; color:var(--muted); margin-top:2px; max-width:360px}
+  /* mismo look que el resto de los inputs de la app — sin esto, el navegador le
+     pone su estilo nativo (fondo blanco, tipografía del sistema) y desentona feo */
+  .settings-row input[type=number]{width:64px; text-align:center; padding:7px 6px; flex-shrink:0; font-family:inherit; font-size:14px; color:var(--text); background:var(--surface); border:1px solid var(--border); border-radius:9px; outline:none; transition:.15s}
+  .settings-row input[type=number]:focus{border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-soft)}
+  /* sección plegable dentro de Ajustes (mismo truco grid-template-rows que las tarjetas) */
+  .settings-collapse-head{display:flex; align-items:center; justify-content:space-between; width:100%; background:none; border:none; padding:0; margin:0; cursor:pointer; font:inherit; color:inherit; text-align:left}
+  .settings-collapse-head:hover h3{color:var(--primary)}
+  .settings-collapse-head .chev{color:var(--muted); flex-shrink:0; transition:transform .25s cubic-bezier(.4,0,.2,1)}
+  .settings-section.open .settings-collapse-head .chev{transform:rotate(180deg)}
+  .settings-collapse-body{display:grid; grid-template-rows:0fr; transition:grid-template-rows .28s cubic-bezier(.4,0,.2,1)}
+  .settings-section.open .settings-collapse-body{grid-template-rows:1fr}
+  .settings-collapse-body-inner{overflow:hidden; min-height:0}
+  .settings-collapse-body-inner>p{margin-top:12px}
+  /* interruptor tipo iOS, hecho con un checkbox nativo (accesible) + 2 spans pintados */
+  .switch{position:relative; display:inline-block; width:44px; height:26px; flex-shrink:0}
+  .switch input{position:absolute; inset:0; opacity:0; margin:0; cursor:pointer; z-index:1}
+  .switch-track{position:absolute; inset:0; background:var(--border-2); border-radius:20px; transition:background .18s}
+  .switch-thumb{position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.35); transition:transform .18s}
+  .switch input:checked+.switch-track{background:var(--primary)}
+  .switch input:checked+.switch-track .switch-thumb{transform:translateX(18px)}
+  .switch input:focus-visible+.switch-track{box-shadow:0 0 0 3px var(--primary-soft)}
+  .danger-zone p{color:var(--muted)}
+
+  #toast{position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--text); color:var(--surface); padding:11px 20px; border-radius:12px; font-size:14px; font-weight:600; box-shadow:var(--shadow-lg); z-index:80; opacity:0; pointer-events:none; transition:.2s; display:flex; align-items:center; gap:9px; max-width:90vw}
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+  #toast svg{color:var(--success); flex-shrink:0}
+  footer{max-width:1180px; margin:0 auto; padding:0 20px 40px; text-align:center; color:var(--faint); font-size:12.5px}
+  footer .sec{display:inline-flex; align-items:center; gap:6px}
+
+  #gate{position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; padding:24px; background:linear-gradient(180deg,var(--bg),var(--bg2))}
+  .gate-card{width:100%; max-width:400px; background:var(--surface); border:1px solid var(--border); border-radius:22px; box-shadow:var(--shadow-lg); padding:30px 26px; text-align:center; animation:pop .2s ease}
+  .gate-logo{width:60px; height:60px; border-radius:17px; margin:0 auto 16px; background:linear-gradient(135deg,var(--primary),var(--primary-d)); display:grid; place-items:center; color:#fff; box-shadow:0 8px 20px rgba(99,102,241,.4)}
+  .gate-card h1{margin:0 0 6px; font-size:21px; letter-spacing:-.3px}
+  .gate-sub{margin:0 0 22px; color:var(--muted); font-size:14px}
+  .gate-field{text-align:left; margin-bottom:14px}
+  .gate-field label{display:block; font-size:12.5px; font-weight:600; color:var(--muted); margin-bottom:5px}
+  .gate-field input{width:100%; padding:12px 13px; border:1px solid var(--border); border-radius:11px; background:var(--surface-2); color:var(--text); font-size:15px; outline:none; transition:.15s}
+  .gate-field input:focus{border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-soft)}
+  .gate-pass{display:flex; gap:6px}
+  .gate-pass input{flex:1}
+  .gate-pass .icon-btn{border:1px solid var(--border); flex-shrink:0; width:44px}
+  .gate-note{display:block; margin-top:5px; font-size:11.5px; color:var(--faint)}
+  .gate-btn{width:100%; justify-content:center; margin-top:6px; padding:13px; font-size:15px}
+  .gate-error{color:var(--danger); font-size:13.5px; font-weight:600; min-height:18px; margin-bottom:6px}
+  .gate-hint, .gate-warn{border-radius:11px; padding:11px 13px; font-size:13px; text-align:left; display:flex; gap:8px; align-items:flex-start; line-height:1.5}
+  .gate-hint svg, .gate-warn svg{flex-shrink:0; margin-top:1px}
+  .gate-hint{background:var(--surface-2); border:1px solid var(--border); color:var(--muted); margin-bottom:14px}
+  .gate-warn{background:var(--danger-soft); border:1px solid var(--border); color:var(--muted); margin-top:18px; font-size:12.5px}
+  .gate-reset{margin-top:18px; padding-top:18px; border-top:1px solid var(--border)}
+  .gate-reset p{font-size:13px; color:var(--muted); margin:0 0 10px}
+  @media (max-width:560px){
+    .header-inner{padding:12px 14px}
+    .brand small{display:none}
+    .tabs-wrap, main, footer, .banner{padding-left:14px; padding-right:14px}
+    .grid{grid-template-columns:1fr}
+    .btn .label-hide{display:none}
+    .cf-row{grid-template-columns:1fr 1fr auto}
+    .cf-secret{grid-column:1/-1; justify-content:flex-start}
+  }
+</style>
+</head>
+<body>
+
+<div id="gate"></div>
+
+<div id="app" style="display:none">
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <span class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+      <div>Mis Contraseñas<small>Tu organizador personal</small></div>
+    </div>
+    <div class="search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="search" type="text" placeholder="Buscar por título, usuario, nota..." autocomplete="off">
+      <button class="clear" id="clearSearch" title="Limpiar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="settingsBtn" title="Ajustes"></button>
+      <button class="icon-btn" id="lockBtn" title="Bloquear ahora"></button>
+      <button class="icon-btn" id="themeBtn" title="Cambiar tema"></button>
+      <button class="icon-btn" id="viewModeBtn" title="Cambiar a vista lista"></button>
+      <button class="icon-btn" id="importBtn" title="Importar copia de seguridad"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 9 5-5 5 5"/><path d="M12 4v12"/></svg></button>
+      <button class="icon-btn" id="exportBtn" title="Exportar copia de seguridad (cifrada)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 11 5 5 5-5"/><path d="M12 16V4"/></svg></button>
+      <button class="btn primary" id="newBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="label-hide">Nueva entrada</span></button>
+    </div>
+  </div>
+</header>
+
+<div id="backupBanner" class="banner" style="display:none">
+  <div class="banner-inner">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+    <span class="grow">Hace tiempo que no hacés una copia de seguridad. Si perdés este equipo o borrás los datos del navegador, podrías perder tus contraseñas.</span>
+    <button class="btn primary sm" id="bannerExport">Exportar ahora</button>
+    <button class="icon-btn sm" id="bannerClose" title="Después"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+</div>
+
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab active" data-view="active"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Activas <span class="count" id="countActive">0</span></button>
+    <button class="tab" data-view="archived"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="M10 12h4"/></svg>Archivadas <span class="count" id="countArchived">0</span></button>
+    <button class="tab" data-view="trash"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>Papelera <span class="count" id="countTrash">0</span></button>
+  </div>
+</div>
+
+<aside class="side-sort" id="sideSort">
+  <span class="side-sort-label">Ordenar por</span>
+  <button type="button" class="sort-opt" data-sort="manual" title="El orden que armaste vos arrastrando">Manual</button>
+  <button type="button" class="sort-opt" data-sort="az" title="A a la Z">Alfabético A-Z</button>
+  <button type="button" class="sort-opt" data-sort="za" title="Z a la A">Alfabético Z-A</button>
+  <button type="button" class="sort-opt" data-sort="newest" title="Las últimas que creaste, primero">Más nuevas</button>
+  <button type="button" class="sort-opt" data-sort="oldest" title="Las primeras que creaste, primero">Más antiguas</button>
+</aside>
+
+<main>
+  <div class="health-panel" id="healthPanel" style="display:none"></div>
+  <div class="cat-bar" id="catBar"></div>
+  <div class="trash-bar" id="trashBar" style="display:none">
+    <span class="trash-bar-info">Lo que está acá se borra solo a los 30 días.</span>
+    <button class="btn danger sm" id="emptyTrashBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>Vaciar papelera</button>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer><span class="sec"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Todo está cifrado con tu clave maestra y guardado solo en esta computadora. Usá <b>Exportar</b> para una copia de seguridad.</span></footer>
+</div>
+
+<!-- Modal crear / editar -->
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <h2 id="modalTitle">Nueva entrada</h2>
+      <button class="icon-btn" data-action="modal-cancel" title="Cerrar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <label class="f">Título<input id="modalTitleInput" type="text" placeholder="Ej: Gmail, Banco, Hospital..." autocomplete="off"></label>
+      <label class="f">Sitio web (URL) <span class="opt">(opcional)</span><input id="modalUrl" type="text" placeholder="Ej: gmail.com" autocomplete="off"></label>
+      <label class="f">Categoría <span class="opt">(opcional)</span><input id="modalCategory" type="text" list="catList" placeholder="Ej: Redes, Bancos, Juegos" autocomplete="off"></label>
+      <datalist id="catList"></datalist>
+      <div class="accounts-editor-label">Cuentas</div>
+      <div id="modalAccounts"></div>
+      <button class="add-block-btn" data-action="add-block"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Agregar otra cuenta</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" data-action="modal-cancel">Cancelar</button>
+      <button class="btn primary" data-action="modal-save">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ajustes -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <h2>Ajustes</h2>
+      <button class="icon-btn" data-set="close" title="Cerrar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-section">
+        <h3>Correo / usuario predeterminado</h3>
+        <p>Cargá tu mail más usado. Después, en el campo "Usuario / correo" de cualquier cuenta, lo tocás y apretás <b>Tab</b> y se autocompleta solo (igual lo podés cambiar a mano).</p>
+        <label class="f">Tu correo o usuario<div class="pass-input"><input id="setDefaultEmail" type="text" autocomplete="off" placeholder="Ej: usuario@gmail.com"><button type="button" class="btn primary sm" data-set="save-email" style="flex-shrink:0">Guardar</button></div></label>
+        <div id="setEmailMsg" style="font-size:12.5px;font-weight:600;color:var(--success);min-height:16px"></div>
+      </div>
+      <div style="border-top:1px solid var(--border); margin:4px 0 18px"></div>
+      <div class="settings-section" id="masterPwSection">
+        <button type="button" class="settings-collapse-head" data-set="toggle-master-pw" aria-expanded="false">
+          <h3>Cambiar clave maestra</h3>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="settings-collapse-body">
+          <div class="settings-collapse-body-inner">
+            <p>Para cambiarla, ingresá tu clave actual y después la nueva.</p>
+            <label class="f">Clave actual<div class="pass-input"><input id="setCurrent" type="password" autocomplete="current-password" placeholder="Tu clave de ahora"><button type="button" class="icon-btn" data-set="toggle" title="Mostrar/ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
+            <label class="f">Nueva clave<div class="pass-input"><input id="setNew" type="password" autocomplete="new-password" placeholder="La nueva clave"><button type="button" class="icon-btn" data-set="toggle" title="Mostrar/ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
+            <label class="f">Repetí la nueva clave<div class="pass-input"><input id="setNew2" type="password" autocomplete="new-password" placeholder="La nueva clave otra vez"><button type="button" class="icon-btn" data-set="toggle" title="Mostrar/ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
+            <label class="f">Pista (opcional)<input id="setHint" type="text" autocomplete="off" placeholder="Recordatorio para la pantalla de bloqueo"></label>
+            <div id="setError" class="gate-error" style="text-align:left"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid var(--border); margin:4px 0 18px"></div>
+      <div class="settings-section">
+        <h3>Preferencias</h3>
+        <div class="settings-row">
+          <div><div class="lbl">Bloqueo automático</div><div class="desc">Bloquea la app sola después de un rato sin actividad.</div></div>
+          <label class="switch"><input type="checkbox" id="setAutoLockOn"><span class="switch-track"><span class="switch-thumb"></span></span></label>
+        </div>
+        <div class="settings-row" id="autoLockMinRow">
+          <div><div class="lbl">Minutos de inactividad</div><div class="desc">Cuánto esperar sin uso antes de bloquear.</div></div>
+          <input id="setAutoLockMin" type="number" min="1" max="180" step="1">
+        </div>
+        <div class="settings-row">
+          <div><div class="lbl">Reorganización automática</div><div class="desc">Al plegar o desplegar una tarjeta, reacomoda las columnas para no dejar huecos. Si al desplegar varias juntas te resulta molesto, desactivalo.</div></div>
+          <label class="switch"><input type="checkbox" id="setAutoReorg"><span class="switch-track"><span class="switch-thumb"></span></span></label>
+        </div>
+        <div class="settings-row">
+          <div><div class="lbl">Panel de salud de contraseñas</div><div class="desc">Muestra arriba de tus contraseñas activas un resumen de cuántas están reutilizadas, viejas o son débiles.</div></div>
+          <label class="switch"><input type="checkbox" id="setHealthPanel"><span class="switch-track"><span class="switch-thumb"></span></span></label>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid var(--border); margin:4px 0 18px"></div>
+      <div class="settings-section danger-zone">
+        <h3 style="color:var(--danger)">Zona de peligro</h3>
+        <p>Esto borra <b>todo</b>: cada contraseña guardada, categorías y tu clave maestra. Es exactamente lo mismo que "Restablecer de fábrica" desde la pantalla de bloqueo. No hay forma de deshacerlo ni de recuperar los datos después.</p>
+        <button type="button" class="btn danger" data-set="delete-all" style="width:100%; justify-content:center">Eliminar todos mis datos</button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" data-set="close">Cancelar</button>
+      <button class="btn primary" data-set="save">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ===========================================================================
+     MIS CONTRASEÑAS — app de una sola página, sin servidor ni dependencias.
+     Todo se cifra con la clave maestra (AES-GCM 256 + PBKDF2) y se guarda en
+     localStorage. Nada sale de esta computadora.
+
+     MAPA DEL ARCHIVO (buscá estos títulos para saltar de sección):
+       · ICON .................. íconos SVG reutilizables
+       · constantes / estado ... claves de localStorage, tiempos y variables globales
+       · utilidades ............ uid, escapeHtml, normalize, copiar, toast
+       · fuerza / generador .... medidor + dadito de contraseñas
+       · cifrado ............... deriveKey / encrypt / decrypt
+       · TOTP (2FA) ............ códigos de 6 dígitos
+       · guardado .............. save() en cola (no-op si está bloqueada)
+       · papelera .............. purga automática + vaciar
+       · render ................ pinta la grilla desde `data` (única fuente de verdad)
+       · editor en línea / modal  formularios de cuentas
+       · arrastrar ............. reordenar tarjetas y cuentas (drag & drop)
+       · exportar / importar / ajustes / bloqueo / inicio
+
+     ESQUEMA DE DATOS (`data`, lo que se cifra):
+       { version:2, defaultEmail:'',
+         cards:[ { id, title, url, category, favorite, collapsed,
+                   archived, deleted, deletedAt, createdAt,
+                   accounts:[ { id, subtitle, user, password, extra, totp,
+                                fields:[{id,label,value,secret}],
+                                passwordUpdatedAt, archived, deleted, deletedAt } ] } ] }
+
+     INVARIANTES IMPORTANTES:
+       · `render()` reconstruye la grilla entera desde `data`. Para cambios que
+         necesitan animación (plegar) se togglea una clase sin re-renderizar.
+       · `save()` cifra `data` y la escribe; si no hay `cryptoKey` (app bloqueada)
+         no hace nada → por eso al recargar y bloquear, los cambios no persisten.
+       · Orden de tarjetas: favoritas primero (estable) y el resto en el orden
+         manual del array `data.cards` (el que define el arrastrar).
+       · Preferencias (bloqueo automático, sus minutos, reorganización automática
+         de columnas, panel de salud) NO forman parte de `data` — no se cifran,
+         viven sueltas en localStorage (variables `autoLockOn`/`autoLockMin`/
+         `autoReorgOn`/`healthPanelOn`, cargadas en `loadPreferences()`), porque
+         son ajustes de la app en esta computadora, no información sensible.
+       · `accountHasIssue(a,type)` es la única fuente de verdad para "esta
+         cuenta está reutilizada/vieja/débil" — la usan tanto las badges de
+         cada tarjeta como el panel de salud, para que nunca queden en
+         desacuerdo entre sí.
+     =========================================================================== */
+
+  const ICON = {
+    edit:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+    trash:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>',
+    archive:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="m9 13 3 3 3-3"/><path d="M12 16v-5"/></svg>',
+    unarchive:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="m9 14 3-3 3 3"/><path d="M12 11v5"/></svg>',
+    eye:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>',
+    eyeOff:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.2A10.6 10.6 0 0 1 12 4c6.5 0 10 7 10 7a13.2 13.2 0 0 1-2.2 3M6.6 6.6A13.3 13.3 0 0 0 2 11s3.5 7 10 7a10.5 10.5 0 0 0 4.4-.9"/><path d="M10.6 10.6a2 2 0 1 0 2.8 2.8"/><path d="m2 2 20 20"/></svg>',
+    copy:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+    plus:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+    check:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    sun:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+    moon:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>',
+    lockSm:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+    lockBig:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+    shield:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>',
+    bulb:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z"/></svg>',
+    alert:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
+    gear:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>',
+    star:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1Z"/></svg>',
+    link:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>',
+    restore:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M3.5 13a9 9 0 1 0 2.6-7.6L3 7"/></svg>',
+    key:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 8.3-8.3"/><path d="m16 5 3 3"/><path d="m19 7 2-2"/></svg>',
+    folder:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>',
+    box:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="M10 12h4"/></svg>',
+    trashBig:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>',
+    search:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
+    grip:'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="9" cy="5" r="1.7"/><circle cx="15" cy="5" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="19" r="1.7"/><circle cx="15" cy="19" r="1.7"/></svg>',
+    dice:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.2" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.2" fill="currentColor" stroke="none"/></svg>',
+    chevron:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+    listView:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+    gridView:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+    sort:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18M6 12h12M10 17h4"/></svg>'
+  };
+
+  const KEY_VAULT='mis_contrasenas_vault';
+  const KEY_OLD='mis_contrasenas_v1';
+  const KEY_FAILS='mis_contrasenas_intentos';
+  const KEY_THEME='mis_contrasenas_tema';
+  const KEY_EXPORT='mis_contrasenas_ultimo_export';
+  const KEY_AUTOLOCK_ON='mis_contrasenas_autolock_on';     // '1'/'0' — bloqueo automático activado
+  const KEY_AUTOLOCK_MIN='mis_contrasenas_autolock_min';   // minutos de inactividad antes de bloquear
+  const KEY_AUTOREORG='mis_contrasenas_autoreorg';         // '1'/'0' — reacomodar columnas al plegar/desplegar
+  const KEY_HEALTH_PANEL='mis_contrasenas_health_panel';   // '1'/'0' — mostrar el panel de salud de contraseñas
+  const KEY_VIEW_MODE='mis_contrasenas_vista';             // 'cards' | 'list'
+  const KEY_SORT_MODE='mis_contrasenas_orden';             // manual | az | za | newest | oldest
+  const RESET_LIMIT=10;
+  const PBKDF2_ITERS=250000;
+  const DEFAULT_AUTOLOCK_MIN=10;     // valor por defecto si el usuario nunca lo cambió
+  const CLIP_CLEAR_MS=20000;         // 20 segundos
+  const TRASH_DAYS=30;
+  const OLD_PASS_DAYS=180;
+  const BACKUP_REMIND_DAYS=14;
+  const DAY=86400000;
+
+  let data={version:2, cards:[], defaultEmail:''};
+  let currentView='active';
+  let searchQuery='';
+  let categoryFilter='';
+  let issueFilter='';   // '' | 'reuse' | 'old' | 'weak' — filtro al tocar un chip del panel de salud
+  let sortMode='manual'; // manual | az | za | newest | oldest — cómo ordenar las tarjetas activas
+  let reuseMap={};
+  let reuseGroups={};  // password -> [{cardId,accountId,label}] — quién más usa cada contraseña
+  const inlineEditIds=new Set();
+  const newAccountIds=new Set();
+  let modalMode='create', modalCardId=null;
+  let bannerDismissed=false;
+
+  // Preferencias configurables desde Ajustes (se cargan de localStorage en init()).
+  let autoLockOn=true;
+  let autoLockMin=DEFAULT_AUTOLOCK_MIN;
+  let autoReorgOn=true;
+  let healthPanelOn=true;
+  let viewMode='cards'; // 'cards' | 'list'
+
+  let cryptoKey=null, vaultSaltB64=null, vaultHint='', vault=null;
+  let inactivityTimer=null, totpInterval=null, clipTimer=null;
+
+  const enc=new TextEncoder(), dec=new TextDecoder();
+
+  /* ---------- utilidades ---------- */
+  const $=id=>document.getElementById(id);                 // atajo: $('miId')
+  const $$=(sel,root)=>(root||document).querySelector(sel); // atajo: primer match
+  function uid(){ return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():'id-'+Date.now()+'-'+Math.random().toString(16).slice(2); }
+  function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function normalize(obj){
+    const cards=(obj&&Array.isArray(obj.cards)?obj.cards:[]).map(c=>{
+      const createdAt=c.createdAt||Date.now();
+      return {
+        id:c.id||uid(),
+        title:typeof c.title==='string'?c.title:'(sin título)',
+        url:typeof c.url==='string'?c.url:'',
+        category:typeof c.category==='string'?c.category:'',
+        favorite:!!c.favorite,
+        collapsed:!!c.collapsed,
+        archived:!!c.archived,
+        deleted:!!c.deleted,
+        deletedAt:c.deletedAt||null,
+        createdAt:createdAt,
+        accounts:(Array.isArray(c.accounts)?c.accounts:[]).map(a=>({
+          id:a.id||uid(),
+          subtitle:a.subtitle||'',
+          user:a.user||'',
+          password:a.password||'',
+          extra:a.extra||'',
+          totp:typeof a.totp==='string'?a.totp:'',
+          fields:(Array.isArray(a.fields)?a.fields:[]).map(f=>({id:f.id||uid(),label:f.label||'',value:f.value||'',secret:!!f.secret})),
+          passwordUpdatedAt:a.passwordUpdatedAt||createdAt,
+          archived:!!a.archived,
+          deleted:!!a.deleted,
+          deletedAt:a.deletedAt||null
+        }))
+      };
+    });
+    return {version:2, cards, defaultEmail:(obj&&typeof obj.defaultEmail==='string')?obj.defaultEmail:''};
+  }
+  function findCard(id){ return data.cards.find(c=>c.id===id); }
+  function findAccount(cardId,accId){ const c=findCard(cardId); return c?c.accounts.find(a=>a.id===accId):null; }
+
+  async function copyText(t){
+    if(!t) return;
+    try{ await navigator.clipboard.writeText(t); }
+    catch(e){ const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.focus(); ta.select(); try{document.execCommand('copy');}catch(_){} document.body.removeChild(ta); }
+  }
+  function copySecret(text,label){
+    if(!text) return;
+    copyText(text);
+    toast(label+' copiada · se borra del portapapeles en 20 s');
+    clearTimeout(clipTimer);
+    clipTimer=setTimeout(()=>{ if(navigator.clipboard) navigator.clipboard.writeText('').catch(()=>{}); }, CLIP_CLEAR_MS);
+  }
+  let toastTimer;
+  function toast(msg){
+    const t=$('toast');
+    t.innerHTML=ICON.check+'<span>'+escapeHtml(msg)+'</span>';
+    t.classList.add('show'); clearTimeout(toastTimer);
+    toastTimer=setTimeout(()=>t.classList.remove('show'),2400);
+  }
+
+  /* ---------- fuerza de contraseña ---------- */
+  function scorePassword(pw){
+    if(!pw) return {pct:0,label:'',color:'transparent'};
+    let s=0;
+    if(pw.length>=8)s++; if(pw.length>=12)s++; if(pw.length>=16)s++;
+    if(/[a-z]/.test(pw)&&/[A-Z]/.test(pw))s++;
+    if(/\d/.test(pw))s++;
+    if(/[^A-Za-z0-9]/.test(pw))s++;
+    if(s<=2) return {pct:34,label:'Débil',color:'var(--danger)'};
+    if(s<=4) return {pct:67,label:'Media',color:'var(--warn)'};
+    return {pct:100,label:'Fuerte',color:'var(--success)'};
+  }
+  function updateStrength(input){
+    const label=input.closest('label.f'); if(!label) return;
+    const fill=label.querySelector('.strength-fill'); const lab=label.querySelector('.strength-label');
+    if(!fill||!lab) return;
+    const r=scorePassword(input.value);
+    fill.style.width=r.pct+'%'; fill.style.background=r.color;
+    lab.textContent=r.label?('Seguridad: '+r.label):''; lab.style.color=r.color;
+  }
+  /* ---------- generador de contraseña fuerte (el dadito) ---------- */
+  function randInt(n){ return crypto.getRandomValues(new Uint32Array(1))[0]%n; }
+  function genPassword(len){
+    len=len||18;
+    const lowers='abcdefghijkmnpqrstuvwxyz';   // sin l
+    const uppers='ABCDEFGHJKLMNPQRSTUVWXYZ';    // sin I/O
+    const digits='23456789';                    // sin 0/1
+    const symbols='!@#$%&*?-_=+';
+    const all=lowers+uppers+digits+symbols;
+    const pick=set=>set[randInt(set.length)];
+    const out=[pick(lowers),pick(uppers),pick(digits),pick(symbols)];
+    while(out.length<len) out.push(all[randInt(all.length)]);
+    for(let i=out.length-1;i>0;i--){ const j=randInt(i+1); const t=out[i]; out[i]=out[j]; out[j]=t; }
+    return out.join('');
+  }
+  function fillGenerated(input,toggleBtn){
+    if(!input) return;
+    input.value=genPassword(); input.type='text';
+    if(toggleBtn) toggleBtn.innerHTML=ICON.eyeOff;
+    updateStrength(input);
+    toast('Contraseña fuerte generada');
+  }
+
+  /* ---------- cifrado ----------
+     Todo lo que ves acá usa la Web Crypto API nativa del navegador (nada de
+     librerías externas). El flujo es:
+       1) deriveKey(): la clave maestra (texto que escribe el usuario) NUNCA
+          se guarda. Se pasa por PBKDF2-SHA256 con muchas iteraciones (lento
+          a propósito, para que probar contraseñas por fuerza bruta sea caro)
+          junto con una "sal" (salt) aleatoria, y de ahí sale una clave
+          AES-256 que sí sirve para cifrar/descifrar.
+       2) encryptData()/decryptData(): AES-GCM cifra el JSON de `data` entero.
+          GCM además autentica: si alguien edita el texto cifrado a mano,
+          decryptData() falla en vez de devolver datos corruptos silenciosos.
+       3) Cada cifrado usa un IV (vector de inicialización) al azar — nunca
+          se reutiliza el mismo IV con la misma clave, como corresponde con
+          AES-GCM.
+     Nada de esto sale de la computadora: no hay fetch, no hay servidor. */
+  function bufToB64(buf){ const b=new Uint8Array(buf); let s=''; for(let i=0;i<b.length;i++)s+=String.fromCharCode(b[i]); return btoa(s); }
+  function b64ToBuf(b64){ const bin=atob(b64); const b=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)b[i]=bin.charCodeAt(i); return b; }
+  async function deriveKey(pw,salt,iters){
+    const base=await crypto.subtle.importKey('raw',enc.encode(pw),'PBKDF2',false,['deriveKey']);
+    return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:iters||PBKDF2_ITERS,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+  }
+  async function encryptData(key,obj){
+    const iv=crypto.getRandomValues(new Uint8Array(12));
+    const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,enc.encode(JSON.stringify(obj)));
+    return {iv:bufToB64(iv),ct:bufToB64(ct)};
+  }
+  async function decryptData(key,ivB64,ctB64){
+    const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64ToBuf(ivB64)},key,b64ToBuf(ctB64));
+    return JSON.parse(dec.decode(pt));
+  }
+
+  /* ---------- TOTP (2FA) ----------
+     Implementa el algoritmo estándar de Google Authenticator/Authy (RFC 6238):
+     a partir de un "secreto" compartido (el texto que te da el sitio al
+     activar el 2FA) y la hora actual redondeada a bloques de 30 segundos,
+     se calcula un HMAC-SHA1 y se recorta a 6 dígitos. Como no depende de
+     ningún servidor, cualquier app que siga el mismo estándar (esta incluida)
+     genera el mismo código que el sitio original, siempre que el reloj de
+     la computadora esté razonablemente sincronizado. */
+  function base32Decode(b32){
+    const A='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    b32=(b32||'').toUpperCase().replace(/=+$/,'').replace(/[^A-Z2-7]/g,'');
+    let bits=0,val=0; const out=[];
+    for(const ch of b32){ const i=A.indexOf(ch); if(i<0)continue; val=(val<<5)|i; bits+=5; if(bits>=8){ out.push((val>>>(bits-8))&0xff); bits-=8; } }
+    return new Uint8Array(out);
+  }
+  async function totpCode(secret,period){
+    period=period||30;
+    const key=base32Decode(secret);
+    if(key.length===0) return null;
+    let counter=Math.floor(Date.now()/1000/period);
+    const msg=new Uint8Array(8);
+    for(let i=7;i>=0;i--){ msg[i]=counter&0xff; counter=Math.floor(counter/256); }
+    try{
+      const ck=await crypto.subtle.importKey('raw',key,{name:'HMAC',hash:'SHA-1'},false,['sign']);
+      const sig=new Uint8Array(await crypto.subtle.sign('HMAC',ck,msg));
+      const off=sig[sig.length-1]&0x0f;
+      const bin=((sig[off]&0x7f)<<24)|((sig[off+1]&0xff)<<16)|((sig[off+2]&0xff)<<8)|(sig[off+3]&0xff);
+      return (bin%1000000).toString().padStart(6,'0');
+    }catch(e){ return null; }
+  }
+  function startTotp(){ stopTotp(); totpInterval=setInterval(updateTotps,1000); updateTotps(); }
+  function stopTotp(){ if(totpInterval){ clearInterval(totpInterval); totpInterval=null; } }
+  async function updateTotps(){
+    const els=grid.querySelectorAll('.totp');
+    for(const el of els){
+      const cEl=el.closest('[data-card-id]'), aEl=el.closest('[data-account-id]');
+      if(!cEl||!aEl) continue;
+      const a=findAccount(cEl.dataset.cardId,aEl.dataset.accountId);
+      if(!a||!a.totp) continue;
+      const code=await totpCode(a.totp);
+      const dig=el.querySelector('.totp-digits'), sec=el.querySelector('.totp-secs');
+      if(dig) dig.textContent=code?(code.slice(0,3)+' '+code.slice(3)):'inválida';
+      if(sec){ const rem=30-(Math.floor(Date.now()/1000)%30); sec.textContent=rem+'s'; }
+    }
+  }
+
+  /* ---------- guardado (cifrado, en cola) ---------- */
+  let saveChain=Promise.resolve();
+  function save(){ saveChain=saveChain.then(doSave).catch(e=>{console.error('save',e); alert('No se pudieron guardar los datos.');}); return saveChain; }
+  async function doSave(){
+    if(!cryptoKey) return;
+    const p=await encryptData(cryptoKey,data);
+    localStorage.setItem(KEY_VAULT,JSON.stringify({v:1,kdf:'PBKDF2-SHA256',iters:PBKDF2_ITERS,salt:vaultSaltB64,iv:p.iv,ct:p.ct,hint:vaultHint}));
+  }
+
+  /* ---------- papelera: purga automática ---------- */
+  function purgeTrash(){
+    const cut=Date.now()-TRASH_DAYS*DAY; let changed=false;
+    const before=data.cards.length;
+    data.cards=data.cards.filter(c=>!(c.deleted&&c.deletedAt&&c.deletedAt<cut));
+    if(data.cards.length!==before) changed=true;
+    data.cards.forEach(c=>{ const b=c.accounts.length; c.accounts=c.accounts.filter(a=>!(a.deleted&&a.deletedAt&&a.deletedAt<cut)); if(c.accounts.length!==b) changed=true; });
+    if(changed) save();
+  }
+  function countTrash(){
+    let n=data.cards.filter(c=>c.deleted).length;
+    data.cards.filter(c=>!c.deleted).forEach(c=>n+=c.accounts.filter(a=>a.deleted).length);
+    return n;
+  }
+  function emptyTrash(){
+    const total=countTrash();
+    if(total===0){ toast('La papelera ya está vacía'); return; }
+    if(!confirm('¿Vaciar la papelera?\n\nSe van a eliminar para siempre '+total+' elemento'+(total>1?'s':'')+'. Esto no se puede deshacer.')) return;
+    data.cards=data.cards.filter(c=>!c.deleted);
+    data.cards.forEach(c=>{ c.accounts=c.accounts.filter(a=>!a.deleted); });
+    save(); render(); toast('Papelera vaciada');
+  }
+
+  /* ---------- render ---------- */
+  const grid=$('grid');
+  const catBar=$('catBar');
+
+  function buildReuseMap(){
+    const groups={};
+    data.cards.forEach(c=>{
+      if(c.deleted) return;
+      c.accounts.forEach(a=>{
+        if(a.deleted||!a.password) return;
+        const label=c.title+(a.subtitle?' ('+a.subtitle+')':'');
+        (groups[a.password]=groups[a.password]||[]).push({cardId:c.id, accountId:a.id, label});
+      });
+    });
+    reuseGroups=groups;
+    const m={};
+    Object.keys(groups).forEach(pw=>{ m[pw]=groups[pw].length; });
+    reuseMap=m;
+  }
+
+  // Las OTRAS cuentas (no esta misma) que comparten la contraseña de `a`.
+  // Sirve para que la etiqueta "Reutilizada" diga CON QUIÉN, en vez de
+  // obligar a andar adivinando/comparando tarjeta por tarjeta.
+  function reuseSiblings(a){
+    return (reuseGroups[a.password]||[]).filter(x=>x.accountId!==a.id);
+  }
+
+  // Un solo lugar que decide si una cuenta tiene tal o cual problema de seguridad.
+  // La usan tanto las badges de cada tarjeta como el panel de salud, para que
+  // siempre estén de acuerdo (si el panel dice "3 reutilizadas", son las MISMAS
+  // 3 que muestran la etiqueta "Reutilizada" en su tarjeta).
+  function accountHasIssue(a,type){
+    if(!a.password) return false;
+    if(type==='reuse') return reuseMap[a.password]>1;
+    if(type==='old') return !!a.passwordUpdatedAt && (Date.now()-a.passwordUpdatedAt>OLD_PASS_DAYS*DAY);
+    if(type==='weak') return scorePassword(a.password).label==='Débil';
+    return false;
+  }
+
+  // Cuenta, entre las cuentas ACTIVAS (ni archivadas ni en papelera), cuántas
+  // tienen cada tipo de problema. Es la base del panel de salud.
+  function computeHealth(activeCards){
+    const s={reuse:0, old:0, weak:0};
+    activeCards.forEach(c=>c.accounts.forEach(a=>{
+      if(a.archived||a.deleted||!a.password) return;
+      if(accountHasIssue(a,'reuse')) s.reuse++;
+      if(accountHasIssue(a,'old')) s.old++;
+      if(accountHasIssue(a,'weak')) s.weak++;
+    }));
+    return s;
+  }
+
+  function renderHealthPanel(activeCards){
+    const el=$('healthPanel');
+    if(!healthPanelOn || activeCards.length===0){ el.style.display='none'; el.innerHTML=''; return; }
+    const s=computeHealth(activeCards);
+    const chip=(type,icon,singular,plural,n)=>
+      '<button type="button" class="health-stat'+(issueFilter===type?' active':'')+'" data-issue="'+type+'"'+(n===0?' disabled':'')+'>'
+      +icon+' <span class="n">'+n+'</span> '+(n===1?singular:plural)+'</button>';
+    el.innerHTML=
+      chip('reuse','⚠️','reutilizada','reutilizadas',s.reuse)+
+      chip('old','⏰','vieja','viejas',s.old)+
+      chip('weak','🔴','débil','débiles',s.weak);
+    el.style.display='flex';
+  }
+
+  function render(){
+    buildReuseMap();
+    const activeCards=data.cards.filter(c=>!c.deleted&&!c.archived);
+    let archCount=data.cards.filter(c=>!c.deleted&&c.archived).length;
+    activeCards.forEach(c=>archCount+=c.accounts.filter(a=>!a.deleted&&a.archived).length);
+    const trashCount=countTrash();
+    $('countActive').textContent=activeCards.length;
+    $('countArchived').textContent=archCount;
+    $('countTrash').textContent=trashCount;
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===currentView));
+    $('trashBar').style.display=(currentView==='trash'&&trashCount>0)?'flex':'none';
+    $('sideSort').style.display=currentView==='active'?'':'none'; // el orden solo aplica a Activas
+
+    catBar.innerHTML='';
+    let els;
+    if(currentView==='active'){ renderCatBar(activeCards); renderHealthPanel(activeCards); els=renderActive(activeCards); }
+    else { $('healthPanel').style.display='none'; if(currentView==='archived') els=renderArchived(); else els=renderTrash(); }
+    layoutInColumns(els);
+    if(cryptoKey){ updateTotps(); maybeShowBanner(); }
+  }
+
+  /* Reparte las tarjetas en columnas (masonry) según el ancho disponible.
+     Cada tarjeta va a la columna MÁS CORTA hasta el momento (no round-robin),
+     así ninguna columna queda con un hueco grande abajo cuando otra tiene una
+     tarjeta larga o desplegada. Para eso medimos la altura real de cada
+     tarjeta en un contenedor invisible con el ancho final de una columna
+     (el ancho importa: los títulos largos ajustan sus líneas distinto). */
+  const GAP=18, MIN_COL=320;
+  let lastColCount=1;
+  function colCount(){
+    if(viewMode==='list') return 1;   // vista lista: siempre una sola columna, prolijita
+    const w=grid.clientWidth||grid.offsetWidth||900;
+    return Math.max(1, Math.floor((w+GAP)/(MIN_COL+GAP)));
+  }
+  function layoutInColumns(els){
+    grid.innerHTML='';
+    if(!els||els.length===0) return;
+    if(els[0].classList&&els[0].classList.contains('empty')){ grid.appendChild(els[0]); lastColCount=1; return; }
+    const n=Math.min(colCount(), els.length);
+    lastColCount=n;
+    const cols=[], heights=new Array(n).fill(0);
+    for(let i=0;i<n;i++){ const c=document.createElement('div'); c.className='grid-col'; cols.push(c); }
+
+    const gridW=grid.clientWidth||grid.offsetWidth||900;
+    const colW=(gridW-(n-1)*GAP)/n;
+    const measurer=document.createElement('div');
+    measurer.style.cssText='position:absolute; visibility:hidden; pointer-events:none; left:-9999px; top:0; width:'+colW+'px';
+    document.body.appendChild(measurer);
+    els.forEach(el=>{
+      measurer.appendChild(el);
+      const h=el.getBoundingClientRect().height;
+      let shortest=0;
+      for(let i=1;i<n;i++) if(heights[i]<heights[shortest]) shortest=i;
+      cols[shortest].appendChild(el);
+      heights[shortest]+=h+GAP;
+    });
+    measurer.remove();
+    cols.forEach(c=>grid.appendChild(c));
+  }
+
+  function acMatch(a,q){ return (a.subtitle+' '+a.user+' '+a.extra+' '+(a.fields||[]).map(f=>f.label+' '+f.value).join(' ')).toLowerCase().includes(q); }
+  function cardMatch(c,q,onlyActiveAcc){ if((c.title+' '+c.category).toLowerCase().includes(q))return true; return c.accounts.some(a=>(!onlyActiveAcc||(!a.archived&&!a.deleted))&&acMatch(a,q)); }
+
+  function renderCatBar(activeCards){
+    const cats=[];
+    activeCards.forEach(c=>{ if(c.category&&cats.indexOf(c.category)<0)cats.push(c.category); });
+    if(cats.length===0){ if(categoryFilter)categoryFilter=''; return; }
+    cats.sort((a,b)=>a.localeCompare(b));
+    const mk=(label,val)=>{ const b=document.createElement('button'); b.className='chip'+(categoryFilter===val?' active':''); b.textContent=label; b.dataset.cat=val; return b; };
+    catBar.appendChild(mk('Todas',''));
+    cats.forEach(c=>catBar.appendChild(mk(c,c)));
+  }
+
+  // Orden elegido por el usuario en el panel lateral. 'manual' devuelve 0 para
+  // cualquier par, así el sort de abajo lo deja tal cual estaba (arrastrar).
+  function compareBySort(a,b){
+    if(sortMode==='az') return a.title.localeCompare(b.title,'es',{sensitivity:'base'});
+    if(sortMode==='za') return b.title.localeCompare(a.title,'es',{sensitivity:'base'});
+    if(sortMode==='newest') return b.createdAt-a.createdAt;
+    if(sortMode==='oldest') return a.createdAt-b.createdAt;
+    return 0;
+  }
+  function renderActive(activeCards){
+    let cards=activeCards.slice();
+    if(categoryFilter) cards=cards.filter(c=>c.category===categoryFilter);
+    if(issueFilter) cards=cards.filter(c=>c.accounts.some(a=>!a.archived&&!a.deleted&&accountHasIssue(a,issueFilter)));
+    if(searchQuery) cards=cards.filter(c=>cardMatch(c,searchQuery,true));
+    // favoritos primero siempre; dentro de cada grupo, el orden elegido (o manual/arrastrar)
+    cards.sort((a,b)=>(b.favorite?1:0)-(a.favorite?1:0)||compareBySort(a,b));
+    if(cards.length===0){
+      if(searchQuery) return [emptyState(ICON.search,'Sin resultados','No encontramos nada para "'+escapeHtml(searchQuery)+'".')];
+      if(issueFilter) return [emptyState(ICON.search,'Sin resultados','Ninguna cuenta activa tiene ese problema. 🎉')];
+      return [emptyState(ICON.folder,'Todavía no tenés contraseñas','Tocá “Nueva entrada” para guardar tu primera cuenta.')];
+    }
+    return cards.map(c=>renderCard(c,c.accounts.filter(a=>!a.archived&&!a.deleted),'active'));
+  }
+
+  function renderArchived(){
+    // Dos casos: (a) la tarjeta ENTERA está archivada -> se muestra tal cual,
+    // con todas sus cuentas. (b) la tarjeta sigue activa pero tiene algunas
+    // cuentas archivadas sueltas -> antes cada una salía en su propia cajita
+    // separada (sin plegar, y podían quedar dispersas en columnas distintas
+    // sin relación visual entre sí); ahora se agrupan todas bajo la misma
+    // tarjeta madre, en una sola caja plegable como el resto de la app.
+    const fullCards=[];
+    const groups=[]; // {card, accounts}
+    data.cards.forEach(c=>{
+      if(c.deleted) return;
+      if(c.archived){
+        if(!searchQuery||cardMatch(c,searchQuery,false)) fullCards.push(c);
+      } else {
+        const accs=c.accounts.filter(a=>a.archived&&!a.deleted&&(!searchQuery||acMatch(a,searchQuery)||c.title.toLowerCase().includes(searchQuery)));
+        if(accs.length>0) groups.push({card:c,accounts:accs});
+      }
+    });
+    if(fullCards.length===0&&groups.length===0) return [emptyState(searchQuery?ICON.search:ICON.box, searchQuery?'Sin resultados':'No hay nada archivado', searchQuery?'No encontramos nada para "'+escapeHtml(searchQuery)+'".':'Las cuentas que archives (en desuso) van a aparecer acá.')];
+    const fullEls=fullCards.map(c=>renderCard(c,c.accounts.filter(a=>!a.deleted),'archivedCard'));
+    const groupEls=groups.map(g=>renderCard(g.card,g.accounts,'archivedGroup'));
+    return [...fullEls,...groupEls];
+  }
+
+  function renderTrash(){
+    const units=[];
+    data.cards.forEach(c=>{
+      if(c.deleted){ if(!searchQuery||cardMatch(c,searchQuery,false)) units.push({type:'card',card:c}); }
+      else c.accounts.filter(a=>a.deleted).forEach(a=>{ if(!searchQuery||acMatch(a,searchQuery)||c.title.toLowerCase().includes(searchQuery)) units.push({type:'acc',card:c,account:a}); });
+    });
+    if(units.length===0) return [emptyState(searchQuery?ICON.search:ICON.trashBig, searchQuery?'Sin resultados':'La papelera está vacía', searchQuery?'No encontramos nada para "'+escapeHtml(searchQuery)+'".':'Lo que elimines se guarda acá '+TRASH_DAYS+' días por si te arrepentís.')];
+    return units.map(u=> u.type==='card' ? renderCard(u.card,u.card.accounts,'trashCard') : renderStandalone(u.card,u.account,'trash'));
+  }
+
+  function emptyState(icon,title,text){ const el=document.createElement('div'); el.className='empty'; el.innerHTML='<div class="ic">'+icon+'</div><h3>'+title+'</h3><p>'+text+'</p>'; return el; }
+
+  function btn(action,icon,title,cls){ return '<button class="icon-btn sm'+(cls?' '+cls:'')+'" data-action="'+action+'" title="'+title+'">'+icon+'</button>'; }
+
+  // mode: active | archivedCard | trashCard
+  function renderCard(card,accounts,mode){
+    const el=document.createElement('div'); el.className='card'; el.dataset.cardId=card.id;
+    let actions='', star='', cat='', badge='';
+    // Arrastrar para reordenar solo tiene sentido en orden manual: si hay un
+    // orden alfabético/por fecha elegido, cualquier arrastre se vería "revertido"
+    // en el próximo render, así que ni mostramos la agarradera para no confundir.
+    const canReorder=(mode==='active'&&sortMode==='manual')||mode==='archivedCard';
+    const grip=canReorder?'<span class="drag-handle card-grip" draggable="true" title="Arrastrá para reordenar">'+ICON.grip+'</span>':'';
+    // Plegar es independiente de poder arrastrar: el grupo de "cuentas archivadas
+    // sueltas" de una tarjeta también se puede plegar, aunque no se reordene.
+    const collapsible=(mode==='active'||mode==='archivedCard'||mode==='archivedGroup')&&accounts.length>0;
+    const chev=collapsible?'<button class="icon-btn sm chev" data-action="toggle-collapse" title="Plegar / desplegar">'+ICON.chevron+'</button>':'';
+    if(mode==='active'){
+      star='<button class="icon-btn star sm'+(card.favorite?' on':'')+'" data-action="toggle-fav" title="Favorito">'+ICON.star+'</button>';
+      if(card.url) actions+=btn('open-url',ICON.link,'Abrir el sitio');
+      actions+=btn('edit-card',ICON.edit,'Editar entrada')+btn('archive-card',ICON.archive,'Archivar')+btn('delete-card',ICON.trash,'Mandar a la papelera','danger');
+      if(card.category) cat='<span class="card-cat">'+escapeHtml(card.category)+'</span>';
+    } else if(mode==='archivedCard'){
+      badge='<span class="parent-badge">archivada</span>';
+      if(card.url) actions+=btn('open-url',ICON.link,'Abrir el sitio');
+      actions+=btn('edit-card',ICON.edit,'Editar entrada')+btn('unarchive-card',ICON.unarchive,'Restaurar')+btn('delete-card',ICON.trash,'Mandar a la papelera','danger');
+    } else if(mode==='archivedGroup'){
+      // la tarjeta en sí sigue activa (no se archivó entera) — solo mostramos
+      // acá las cuentas que SÍ están archivadas, agrupadas. Por eso no hay
+      // acciones de archivar/eliminar a nivel tarjeta, cada cuenta tiene las suyas.
+      badge='<span class="parent-badge">cuentas archivadas</span>';
+      if(card.url) actions+=btn('open-url',ICON.link,'Abrir el sitio');
+    } else { // trashCard
+      badge='<span class="parent-badge">en papelera</span>';
+      actions+=btn('restore-card',ICON.restore,'Restaurar')+btn('delete-card-forever',ICON.trash,'Eliminar definitivamente','danger');
+    }
+    const titlecol='<div class="card-titlecol"><h3 class="card-title"><span class="txt" title="'+escapeHtml(card.title)+'">'+escapeHtml(card.title)+'</span></h3><div class="card-tags">'+cat+badge+'</div></div>';
+    const head='<div class="card-head">'+chev+grip+star+titlecol+'<div class="row-actions">'+actions+'</div></div>';
+
+    if(mode==='trashCard'){
+      el.innerHTML=head+'<div class="accounts"></div>';
+      fillAccounts(el,card,accounts,mode);
+      return el;
+    }
+    // activas / archivadas: cuerpo plegable (lo anima el CSS) + resumen cuando está plegada
+    if(collapsible&&card.collapsed) el.classList.add('collapsed');
+    const addBtn=mode==='active'?'<button class="add-account" data-action="add-account">'+ICON.plus+' Agregar cuenta</button>':'';
+    const summary=collapsible?'<div class="collapsed-summary" data-action="toggle-collapse">'+ICON.chevron+'<span>'+accounts.length+' cuenta'+(accounts.length===1?'':'s')+' · tocá para desplegar</span></div>':'';
+    el.innerHTML=head+'<div class="card-body"><div class="card-body-inner"><div class="accounts"></div>'+addBtn+'</div></div>'+summary;
+    fillAccounts(el,card,accounts,mode);
+    return el;
+  }
+
+  // Llena el contenedor .accounts de una tarjeta con sus cuentas (o el aviso "Sin cuentas.").
+  function fillAccounts(el,card,accounts,mode){
+    const ac=el.querySelector('.accounts');
+    if(accounts.length===0){ ac.innerHTML='<div class="empty-accounts">Sin cuentas.</div>'; return; }
+    const multi=accounts.length>1;
+    const dragAcc=mode==='active'&&accounts.length>1;       // reordenar cuentas solo si hay más de una
+    const set=mode==='active'?['edit','archive','delete']:mode==='archivedCard'?['edit','delete']:mode==='archivedGroup'?['edit','unarchive','delete']:[];
+    accounts.forEach(a=>ac.appendChild(renderAccount(card,a,multi,set,dragAcc)));
+  }
+
+  function renderStandalone(card,account,kind){
+    const el=document.createElement('div'); el.className='card'; el.dataset.cardId=card.id;
+    const tag=kind==='trash'?'en papelera':'archivada';
+    el.innerHTML='<div class="card-head"><div class="card-titlecol"><h3 class="card-title"><span class="txt" title="'+escapeHtml(card.title)+'">'+escapeHtml(card.title)+'</span></h3><div class="card-tags"><span class="parent-badge">'+tag+'</span></div></div></div><div class="accounts"></div>';
+    const set=kind==='trash'?['restore','deleteForever']:['edit','unarchive','delete'];
+    el.querySelector('.accounts').appendChild(renderAccount(card,account,!!account.subtitle,set,kind==='archived'));
+    return el;
+  }
+
+  function renderAccount(card,a,multi,buttons,drag){
+    const el=document.createElement('div'); el.className='account'; el.dataset.accountId=a.id;
+    if(inlineEditIds.has(a.id)){ buildAccountEdit(el,a); return el; }
+    const grip=drag?'<span class="drag-handle acc-grip" draggable="true" title="Arrastrá para reordenar esta cuenta">'+ICON.grip+'</span>':'';
+    const showSub=!!a.subtitle||multi;
+    const headless=!showSub;   // cuenta única sin subtítulo → no dibujamos la fila de encabezado vacía
+    const sub=showSub?'<span class="account-sub">'+escapeHtml(a.subtitle||'Cuenta')+'</span>':'';
+    const map={
+      edit:btn('edit-account',ICON.edit,'Editar'),
+      archive:btn('archive-account',ICON.archive,'Archivar'),
+      unarchive:btn('unarchive-account',ICON.unarchive,'Restaurar'),
+      delete:btn('delete-account',ICON.trash,'Mandar a la papelera','danger'),
+      restore:btn('restore-account',ICON.restore,'Restaurar'),
+      deleteForever:btn('delete-account-forever',ICON.trash,'Eliminar definitivamente','danger')
+    };
+    const acts=buttons.map(b=>map[b]||'').join('');
+    // badges (mismo criterio que el panel de salud, ver accountHasIssue)
+    let badges='';
+    if(accountHasIssue(a,'reuse')){
+      const sibs=[...new Set(reuseSiblings(a).map(x=>x.label))];
+      const shown=sibs.slice(0,2).join(', ');
+      const extra=sibs.length>2?' +'+(sibs.length-2):'';
+      badges+='<span class="badge reuse" title="También la usás en: '+escapeHtml(sibs.join(', '))+'">'+ICON.alert+' Reutilizada con '+escapeHtml(shown)+extra+'</span>';
+    }
+    if(accountHasIssue(a,'old')) badges+='<span class="badge old">⏰ Contraseña vieja</span>';
+    if(accountHasIssue(a,'weak')) badges+='<span class="badge weak">🔴 Contraseña débil</span>';
+    const badgeRow=badges?'<div class="account-badges">'+badges+'</div>':'';
+    // user
+    const uVal=a.user?escapeHtml(a.user):'<span class="muted">—</span>';
+    const uCopy=a.user?btn('copy-user',ICON.copy,'Copiar usuario'):'';
+    // pass
+    const pVal=a.password?'••••••••':'<span class="muted">—</span>';
+    const pBtns=a.password?btn('reveal',ICON.eye,'Mostrar/ocultar')+btn('copy-pass',ICON.copy,'Copiar contraseña'):'';
+    // totp
+    let totpHtml='';
+    if(a.totp){ totpHtml='<div class="field"><span class="field-label">Código 2FA</span><div class="totp"><span class="totp-digits value mono">······</span><span class="totp-secs">30s</span>'+btn('copy-totp',ICON.copy,'Copiar código')+'</div></div>'; }
+    // custom fields
+    let cf='';
+    (a.fields||[]).forEach(f=>{
+      if(!f.label&&!f.value) return;
+      const val=f.secret?'••••••••':(f.value?escapeHtml(f.value):'<span class="muted">—</span>');
+      const reveal=f.secret&&f.value?'<button class="icon-btn sm" data-action="reveal-field" data-fid="'+f.id+'" title="Mostrar/ocultar">'+ICON.eye+'</button>':'';
+      const copy=f.value?'<button class="icon-btn sm" data-action="copy-field" data-fid="'+f.id+'" title="Copiar">'+ICON.copy+'</button>':'';
+      cf+='<div class="field"><span class="field-label">'+escapeHtml(f.label||'Campo')+'</span><div class="value-row"><span class="value cf-val'+(f.secret?' mono':'')+'" data-fid="'+f.id+'" data-secret="'+(f.secret?1:0)+'" data-revealed="0">'+val+'</span>'+reveal+copy+'</div></div>';
+    });
+    const extra=a.extra?'<div class="field"><span class="field-label">Extra</span><p class="value extra">'+escapeHtml(a.extra)+'</p></div>':'';
+    const actionsBar='<div class="account-actions">'+acts+'</div>';
+    const head=headless?'':'<div class="account-head">'+grip+sub+actionsBar+'</div>';
+    // sin subtítulo: los botones van sobre la línea del label "Usuario" (aprovecha el hueco, sin fila vacía)
+    const userLabel=headless
+      ?'<div class="field-label-row"><span class="field-label">Usuario</span>'+actionsBar+'</div>'
+      :'<span class="field-label">Usuario</span>';
+    el.innerHTML=head+badgeRow+
+      '<div class="field">'+userLabel+'<div class="value-row"><span class="value">'+uVal+'</span>'+uCopy+'</div></div>'+
+      '<div class="field"><span class="field-label">Contraseña</span><div class="value-row"><span class="value mono pass-value" data-revealed="0">'+pVal+'</span>'+pBtns+'</div></div>'+
+      totpHtml+cf+extra;
+    return el;
+  }
+
+  /* ---------- editor en línea ---------- */
+  function buildAccountEdit(el,a){
+    el.classList.add('editing');
+    el.innerHTML='<div class="ie">'+
+      '<label class="f">Subtítulo <span class="opt">(opcional)</span><input class="ie-subtitle" type="text" placeholder="Ej: Cuenta principal"></label>'+
+      '<label class="f">Usuario / correo<input class="ie-user" type="text" autocomplete="off"></label>'+
+      '<label class="f">Contraseña<div class="pass-input"><input class="ie-pass" type="password" autocomplete="new-password"><button class="icon-btn" data-action="gen-pass-inline" title="Generar contraseña fuerte">'+ICON.dice+'</button><button class="icon-btn" data-action="toggle-inline-pass" title="Mostrar/ocultar">'+ICON.eye+'</button></div><div class="strength"><span class="strength-fill"></span></div><div class="strength-label"></div></label>'+
+      '<label class="f">Extra <span class="opt">(notas)</span><textarea class="ie-extra" rows="2" placeholder="Notas..."></textarea></label>'+
+      '<div class="ie-actions"><button class="btn ghost sm" data-action="cancel-account-inline">Cancelar</button><button class="btn primary sm" data-action="save-account-inline">Guardar</button></div></div>';
+    el.querySelector('.ie-subtitle').value=a.subtitle||'';
+    el.querySelector('.ie-user').value=a.user||'';
+    el.querySelector('.ie-pass').value=a.password||'';
+    el.querySelector('.ie-extra').value=a.extra||'';
+    const ue=el.querySelector('.ie-user'); if(data.defaultEmail) ue.placeholder=data.defaultEmail+'  (Tab para usar)';
+    updateStrength(el.querySelector('.ie-pass'));
+  }
+
+  /* ---------- acciones ---------- */
+  // Plegar/desplegar SIN re-renderizar, para que el CSS pueda animar la altura.
+  function toggleCollapse(id){
+    const c=findCard(id); if(!c)return;
+    c.collapsed=!c.collapsed;
+    const el=$$('.card[data-card-id="'+(window.CSS&&CSS.escape?CSS.escape(id):id)+'"]', grid);
+    if(el){
+      el.classList.toggle('collapsed', c.collapsed);
+      // La tarjeta anima su propio alto en el momento (ver CSS .card-body), pero eso
+      // cambia cuánto mide su columna. Sin re-acomodar, esa columna puede quedar
+      // desbalanceada contra las demás (un hueco grande abajo). Por eso, apenas
+      // termina la animación, volvemos a repartir todo en columnas — a menos que
+      // el usuario haya apagado "Reorganización automática" en Ajustes, porque
+      // si se pliegan/despliegan varias tarjetas casi al mismo tiempo, este
+      // re-armado puede hacer que alguna "salte" de columna de golpe.
+      const body=el.querySelector('.card-body');
+      if(body && autoReorgOn){
+        const onDone=e=>{ if(e.propertyName!=='grid-template-rows')return; body.removeEventListener('transitionend',onDone); render(); };
+        body.addEventListener('transitionend',onDone);
+      }
+    }
+    save();
+  }
+  function softDeleteCard(id){ const c=findCard(id); if(!c)return; c.deleted=true; c.deletedAt=Date.now(); save(); render(); toast('Entrada movida a la papelera'); }
+  function restoreCard(id){ const c=findCard(id); if(!c)return; c.deleted=false; c.deletedAt=null; save(); render(); toast('Entrada restaurada'); }
+  function deleteCardForever(id){ const c=findCard(id); if(!c)return; if(!confirm('¿Eliminar definitivamente "'+c.title+'"?\n\nEsto no se puede deshacer.'))return; data.cards=data.cards.filter(x=>x.id!==id); save(); render(); toast('Eliminada para siempre'); }
+  function setCardArchived(id,v){ const c=findCard(id); if(!c)return; c.archived=v; save(); render(); toast(v?'Entrada archivada':'Entrada restaurada'); }
+  function toggleFav(id){ const c=findCard(id); if(!c)return; c.favorite=!c.favorite; save(); render(); }
+  function openUrl(id){ const c=findCard(id); if(!c||!c.url)return; let u=c.url.trim(); if(!/^https?:\/\//i.test(u))u='https://'+u; window.open(u,'_blank','noopener'); }
+
+  function softDeleteAccount(cardId,accId){ const a=findAccount(cardId,accId); if(!a)return; a.deleted=true; a.deletedAt=Date.now(); inlineEditIds.delete(accId); newAccountIds.delete(accId); save(); render(); toast('Cuenta movida a la papelera'); }
+  function restoreAccount(cardId,accId){ const a=findAccount(cardId,accId); if(!a)return; a.deleted=false; a.deletedAt=null; save(); render(); toast('Cuenta restaurada'); }
+  function deleteAccountForever(cardId,accId){ const c=findCard(cardId); if(!c)return; if(!confirm('¿Eliminar esta cuenta definitivamente?\n\nEsto no se puede deshacer.'))return; c.accounts=c.accounts.filter(a=>a.id!==accId); save(); render(); toast('Eliminada para siempre'); }
+  function setAccountArchived(cardId,accId,v){ const a=findAccount(cardId,accId); if(!a)return; a.archived=v; save(); render(); toast(v?'Cuenta archivada':'Cuenta restaurada'); }
+
+  function addAccountInline(cardId){ const c=findCard(cardId); if(!c)return; const a={id:uid(),subtitle:'',user:'',password:'',extra:'',totp:'',fields:[],passwordUpdatedAt:Date.now(),archived:false,deleted:false,deletedAt:null}; c.accounts.push(a); inlineEditIds.add(a.id); newAccountIds.add(a.id); save(); render(); const i=grid.querySelector('[data-account-id="'+a.id+'"] .ie-subtitle'); if(i)i.focus(); }
+  function startInlineEdit(accId){ inlineEditIds.add(accId); render(); }
+  function saveInlineEdit(cardId,accId,el){
+    const a=findAccount(cardId,accId); if(!a)return;
+    const newPass=el.querySelector('.ie-pass').value;
+    if(newPass!==a.password) a.passwordUpdatedAt=Date.now();
+    a.subtitle=el.querySelector('.ie-subtitle').value.trim();
+    a.user=el.querySelector('.ie-user').value;
+    a.password=newPass;
+    a.extra=el.querySelector('.ie-extra').value;
+    inlineEditIds.delete(accId); newAccountIds.delete(accId);
+    save(); render(); toast('Cuenta guardada');
+  }
+  function cancelInlineEdit(cardId,accId){
+    inlineEditIds.delete(accId);
+    if(newAccountIds.has(accId)){ const a=findAccount(cardId,accId); if(a&&!a.subtitle&&!a.user&&!a.password&&!a.extra){ const c=findCard(cardId); if(c)c.accounts=c.accounts.filter(x=>x.id!==accId); } newAccountIds.delete(accId); }
+    save(); render();
+  }
+
+  function toggleReveal(el,b,cardId,accId){ const span=el.querySelector('.pass-value'); const a=findAccount(cardId,accId); if(!a)return; if(span.dataset.revealed==='1'){ span.textContent='••••••••'; span.dataset.revealed='0'; b.innerHTML=ICON.eye; } else { span.textContent=a.password||'—'; span.dataset.revealed='1'; b.innerHTML=ICON.eyeOff; } }
+  function toggleRevealField(el,b,cardId,accId,fid){ const a=findAccount(cardId,accId); if(!a)return; const f=(a.fields||[]).find(x=>x.id===fid); if(!f)return; const span=el.querySelector('.cf-val[data-fid="'+fid+'"]'); if(!span)return; if(span.dataset.revealed==='1'){ span.textContent='••••••••'; span.dataset.revealed='0'; b.innerHTML=ICON.eye; } else { span.textContent=f.value||'—'; span.dataset.revealed='1'; b.innerHTML=ICON.eyeOff; } }
+  function togglePassInput(inp,b){ if(inp.type==='password'){ inp.type='text'; b.innerHTML=ICON.eyeOff; } else { inp.type='password'; b.innerHTML=ICON.eye; } }
+
+  /* ---------- delegación grilla ---------- */
+  grid.addEventListener('click',e=>{
+    const b=e.target.closest('[data-action]'); if(!b)return;
+    const action=b.dataset.action;
+    const cardEl=b.closest('[data-card-id]'), accEl=b.closest('[data-account-id]');
+    const cardId=cardEl&&cardEl.dataset.cardId, accId=accEl&&accEl.dataset.accountId;
+    switch(action){
+      case 'edit-card': openModal('editCard',cardId); break;
+      case 'delete-card': softDeleteCard(cardId); break;
+      case 'delete-card-forever': deleteCardForever(cardId); break;
+      case 'restore-card': restoreCard(cardId); break;
+      case 'archive-card': setCardArchived(cardId,true); break;
+      case 'unarchive-card': setCardArchived(cardId,false); break;
+      case 'toggle-fav': toggleFav(cardId); break;
+      case 'toggle-collapse': toggleCollapse(cardId); break;
+      case 'open-url': openUrl(cardId); break;
+      case 'add-account': addAccountInline(cardId); break;
+      case 'edit-account': startInlineEdit(accId); break;
+      case 'save-account-inline': saveInlineEdit(cardId,accId,accEl); break;
+      case 'cancel-account-inline': cancelInlineEdit(cardId,accId); break;
+      case 'delete-account': softDeleteAccount(cardId,accId); break;
+      case 'delete-account-forever': deleteAccountForever(cardId,accId); break;
+      case 'restore-account': restoreAccount(cardId,accId); break;
+      case 'archive-account': setAccountArchived(cardId,accId,true); break;
+      case 'unarchive-account': setAccountArchived(cardId,accId,false); break;
+      case 'reveal': toggleReveal(accEl,b,cardId,accId); break;
+      case 'reveal-field': toggleRevealField(accEl,b,cardId,accId,b.dataset.fid); break;
+      case 'copy-user': { const a=findAccount(cardId,accId); if(a){copyText(a.user); toast('Usuario copiado');} break; }
+      case 'copy-pass': { const a=findAccount(cardId,accId); if(a) copySecret(a.password,'Contraseña'); break; }
+      case 'copy-field': { const a=findAccount(cardId,accId); const f=a&&(a.fields||[]).find(x=>x.id===b.dataset.fid); if(f){ if(f.secret) copySecret(f.value,escapeHtml(f.label||'Campo')); else { copyText(f.value); toast((f.label||'Campo')+' copiado'); } } break; }
+      case 'copy-totp': { const a=findAccount(cardId,accId); if(a&&a.totp){ totpCode(a.totp).then(code=>{ if(code) copySecret(code,'Código 2FA'); }); } break; }
+      case 'toggle-inline-pass': togglePassInput(accEl.querySelector('.ie-pass'),b); break;
+      case 'gen-pass-inline': fillGenerated(accEl.querySelector('.ie-pass'), accEl.querySelector('[data-action="toggle-inline-pass"]')); break;
+    }
+  });
+  grid.addEventListener('input',e=>{ if(e.target.classList&&e.target.classList.contains('ie-pass')) updateStrength(e.target); });
+  catBar.addEventListener('click',e=>{ const ch=e.target.closest('[data-cat]'); if(!ch)return; categoryFilter=ch.dataset.cat; render(); });
+  // Tocar un chip del panel de salud filtra la lista a esas cuentas; tocarlo
+  // de nuevo (ya activo) quita el filtro — como un interruptor, no como una pestaña.
+  $('healthPanel').addEventListener('click',e=>{
+    const b=e.target.closest('[data-issue]'); if(!b||b.disabled) return;
+    issueFilter = (issueFilter===b.dataset.issue) ? '' : b.dataset.issue;
+    render();
+  });
+
+  /* ---------- autorrelleno del correo predeterminado (Tab) ---------- */
+  function maybeAutofillUser(e){
+    if(e.key!=='Tab'||e.shiftKey) return;
+    const el=e.target;
+    if(!data.defaultEmail||el.value.trim()!=='') return;
+    el.value=data.defaultEmail;
+    el.dispatchEvent(new Event('input',{bubbles:true}));
+  }
+  grid.addEventListener('keydown',e=>{ if(e.target.classList&&e.target.classList.contains('ie-user')) maybeAutofillUser(e); });
+
+  /* ---------- arrastrar para reordenar (tarjetas y cuentas) ---------- */
+  let dragKind=null, dragCardId=null, dragAccId=null, dragAccCardId=null, dropTarget=null;
+  function clearDropMarks(){ grid.querySelectorAll('.drop-before,.drop-after').forEach(el=>el.classList.remove('drop-before','drop-after')); }
+  function cleanupDrag(){ grid.querySelectorAll('.dragging').forEach(el=>el.classList.remove('dragging')); clearDropMarks(); dragKind=null; dragCardId=null; dragAccId=null; dragAccCardId=null; dropTarget=null; }
+  grid.addEventListener('dragstart',e=>{
+    const h=e.target.closest('.drag-handle'); if(!h) return;
+    if(h.classList.contains('acc-grip')){
+      const accEl=h.closest('.account'), cardEl=h.closest('.card'); if(!accEl||!cardEl) return;
+      dragKind='account'; dragAccId=accEl.dataset.accountId; dragAccCardId=cardEl.dataset.cardId;
+      try{ e.dataTransfer.setDragImage(accEl,20,16); }catch(_){}
+      setTimeout(()=>accEl.classList.add('dragging'),0);
+    } else {
+      const cardEl=h.closest('.card'); if(!cardEl) return;
+      dragKind='card'; dragCardId=cardEl.dataset.cardId;
+      try{ e.dataTransfer.setDragImage(cardEl,24,20); }catch(_){}
+      setTimeout(()=>cardEl.classList.add('dragging'),0);
+    }
+    e.dataTransfer.effectAllowed='move';
+    try{ e.dataTransfer.setData('text/plain','reorder'); }catch(_){}
+  });
+  grid.addEventListener('dragover',e=>{
+    if(!dragKind) return;
+    if(dragKind==='card'){
+      const target=e.target.closest('.card[data-card-id]');
+      e.preventDefault(); e.dataTransfer.dropEffect='move'; clearDropMarks();
+      if(target && !target.classList.contains('dragging')){
+        const box=target.getBoundingClientRect();
+        const after=e.clientY > box.top+box.height/2;   // columnas: el flujo es vertical
+        target.classList.add(after?'drop-after':'drop-before');
+        dropTarget={id:target.dataset.cardId, after};
+      } else dropTarget=null;
+    } else {
+      const cardEl=e.target.closest('.card[data-card-id]');
+      if(!cardEl || cardEl.dataset.cardId!==dragAccCardId) return;
+      e.preventDefault(); e.dataTransfer.dropEffect='move'; clearDropMarks();
+      const target=e.target.closest('.account[data-account-id]');
+      if(target && !target.classList.contains('dragging')){
+        const box=target.getBoundingClientRect();
+        const after=e.clientY > box.top+box.height/2;
+        target.classList.add(after?'drop-after':'drop-before');
+        dropTarget={id:target.dataset.accountId, after};
+      } else dropTarget=null;
+    }
+  });
+  grid.addEventListener('drop',e=>{
+    if(!dragKind) return;
+    e.preventDefault();
+    if(dragKind==='card' && dropTarget) reorderCard(dragCardId, dropTarget.id, dropTarget.after);
+    else if(dragKind==='account' && dropTarget) reorderAccount(dragAccCardId, dragAccId, dropTarget.id, dropTarget.after);
+    cleanupDrag();
+  });
+  grid.addEventListener('dragend',cleanupDrag);
+  function reorderCard(srcId,targetId,after){
+    if(!srcId||!targetId||srcId===targetId) return;
+    const arr=data.cards; const si=arr.findIndex(c=>c.id===srcId); if(si<0)return;
+    const moved=arr.splice(si,1)[0];
+    const ti=arr.findIndex(c=>c.id===targetId); if(ti<0){ arr.splice(si,0,moved); return; }
+    arr.splice(after?ti+1:ti,0,moved); save(); render();
+  }
+  function reorderAccount(cardId,srcId,targetId,after){
+    if(!srcId||!targetId||srcId===targetId) return;
+    const c=findCard(cardId); if(!c)return; const arr=c.accounts;
+    const si=arr.findIndex(a=>a.id===srcId); if(si<0)return;
+    const moved=arr.splice(si,1)[0];
+    const ti=arr.findIndex(a=>a.id===targetId); if(ti<0){ arr.splice(si,0,moved); return; }
+    arr.splice(after?ti+1:ti,0,moved); save(); render();
+  }
+
+  /* ---------- modal crear / editar ---------- */
+  const overlay=$('overlay');
+  const modalAccounts=$('modalAccounts');
+  const titleInput=$('modalTitleInput');
+  const urlInput=$('modalUrl');
+  const catInput=$('modalCategory');
+
+  function cfRow(f){
+    const d=document.createElement('div'); d.className='cf-row';
+    d.innerHTML='<input class="cf-label" type="text" placeholder="Nombre (Ej: PIN)"><input class="cf-value" type="text" placeholder="Valor"><label class="cf-secret"><input class="cf-secret-chk" type="checkbox"> ocultar</label><button type="button" class="icon-btn sm danger" data-action="remove-field" title="Quitar">'+ICON.trash+'</button>';
+    if(f){ d.querySelector('.cf-label').value=f.label||''; d.querySelector('.cf-value').value=f.value||''; d.querySelector('.cf-secret-chk').checked=!!f.secret; }
+    return d;
+  }
+  function modalBlock(acc){
+    const div=document.createElement('div'); div.className='modal-account'; if(acc&&acc.id)div.dataset.accountId=acc.id;
+    div.innerHTML='<div class="modal-account-head"><span class="ma-label">Cuenta</span><button type="button" class="icon-btn sm danger" data-action="remove-block" title="Quitar esta cuenta">'+ICON.trash+'</button></div>'+
+      '<label class="f">Subtítulo <span class="opt">(opcional, para diferenciar)</span><input class="m-subtitle" type="text" placeholder="Ej: Cuenta principal, Secundaria..."></label>'+
+      '<label class="f">Usuario / correo<input class="m-user" type="text" placeholder="usuario o email" autocomplete="off"></label>'+
+      '<label class="f">Contraseña<div class="pass-input"><input class="m-pass" type="password" placeholder="contraseña" autocomplete="new-password"><button type="button" class="icon-btn" data-action="gen-pass-modal" title="Generar contraseña fuerte">'+ICON.dice+'</button><button type="button" class="icon-btn" data-action="toggle-modal-pass" title="Mostrar/ocultar">'+ICON.eye+'</button></div><div class="strength"><span class="strength-fill"></span></div><div class="strength-label"></div></label>'+
+      '<label class="f">Clave 2FA <span class="opt">(opcional · el "secreto" para generar códigos)</span><input class="m-totp" type="text" placeholder="Ej: JBSWY3DPEHPK3PXP" autocomplete="off"></label>'+
+      '<div class="sub-label">Campos personalizados</div><div class="cf-list"></div><button type="button" class="cf-add" data-action="add-field">'+ICON.plus+' Agregar campo</button>'+
+      '<label class="f">Extra <span class="opt">(notas)</span><textarea class="m-extra" rows="2" placeholder="Notas, pregunta de seguridad, etc."></textarea></label>';
+    if(acc){
+      div.querySelector('.m-subtitle').value=acc.subtitle||'';
+      div.querySelector('.m-user').value=acc.user||'';
+      div.querySelector('.m-pass').value=acc.password||'';
+      div.querySelector('.m-totp').value=acc.totp||'';
+      div.querySelector('.m-extra').value=acc.extra||'';
+      const list=div.querySelector('.cf-list');
+      (acc.fields||[]).forEach(f=>list.appendChild(cfRow(f)));
+    }
+    if(data.defaultEmail) div.querySelector('.m-user').placeholder=data.defaultEmail+'  (Tab para usar)';
+    updateStrength(div.querySelector('.m-pass'));
+    return div;
+  }
+
+  function openModal(mode,cardId){
+    modalMode=mode; modalCardId=cardId||null;
+    modalAccounts.innerHTML='';
+    $('modalTitle').textContent=mode==='editCard'?'Editar entrada':'Nueva entrada';
+    // datalist de categorías
+    const cats=[]; data.cards.forEach(c=>{ if(!c.deleted&&c.category&&cats.indexOf(c.category)<0)cats.push(c.category); });
+    $('catList').innerHTML=cats.map(c=>'<option value="'+escapeHtml(c)+'">').join('');
+    if(mode==='editCard'){
+      const card=findCard(cardId);
+      titleInput.value=card.title; urlInput.value=card.url||''; catInput.value=card.category||'';
+      const vis=card.accounts.filter(a=>!a.archived&&!a.deleted);
+      if(vis.length===0) modalAccounts.appendChild(modalBlock());
+      else vis.forEach(a=>modalAccounts.appendChild(modalBlock(a)));
+    } else { titleInput.value=''; urlInput.value=''; catInput.value=''; modalAccounts.appendChild(modalBlock()); }
+    overlay.classList.add('open'); setTimeout(()=>titleInput.focus(),50);
+  }
+  function closeModal(){ overlay.classList.remove('open'); }
+
+  function saveModal(){
+    const title=titleInput.value.trim();
+    if(!title){ toast('Poné un título'); titleInput.focus(); return; }
+    const existing=modalMode==='editCard'?findCard(modalCardId):null;
+    const accounts=[];
+    modalAccounts.querySelectorAll('.modal-account').forEach(blk=>{
+      const subtitle=blk.querySelector('.m-subtitle').value.trim();
+      const user=blk.querySelector('.m-user').value;
+      const password=blk.querySelector('.m-pass').value;
+      const totp=blk.querySelector('.m-totp').value.trim();
+      const extra=blk.querySelector('.m-extra').value;
+      const fields=[];
+      blk.querySelectorAll('.cf-row').forEach(r=>{ const l=r.querySelector('.cf-label').value.trim(); const v=r.querySelector('.cf-value').value; const s=r.querySelector('.cf-secret-chk').checked; if(l||v) fields.push({id:uid(),label:l,value:v,secret:s}); });
+      if(!subtitle&&!user&&!password&&!extra&&!totp&&fields.length===0) return;
+      const oldId=blk.dataset.accountId;
+      const old=existing&&oldId?existing.accounts.find(a=>a.id===oldId):null;
+      const pwChanged=!old||old.password!==password;
+      accounts.push({id:oldId||uid(),subtitle,user,password,extra,totp,fields,passwordUpdatedAt:pwChanged?Date.now():old.passwordUpdatedAt,archived:false,deleted:false,deletedAt:null});
+    });
+    if(modalMode==='editCard'){
+      const card=existing;
+      const preserved=card.accounts.filter(a=>a.archived||a.deleted);
+      card.title=title; card.url=urlInput.value.trim(); card.category=catInput.value.trim();
+      card.accounts=accounts.concat(preserved);
+      toast('Entrada actualizada');
+    } else {
+      data.cards.unshift({id:uid(),title,url:urlInput.value.trim(),category:catInput.value.trim(),favorite:false,collapsed:false,archived:false,deleted:false,deletedAt:null,createdAt:Date.now(),accounts});
+      toast('Entrada creada');
+    }
+    save(); closeModal(); render();
+  }
+
+  overlay.addEventListener('click',e=>{
+    if(e.target===overlay){ closeModal(); return; }
+    const b=e.target.closest('[data-action]'); if(!b)return;
+    const action=b.dataset.action;
+    if(action==='modal-cancel') closeModal();
+    else if(action==='modal-save') saveModal();
+    else if(action==='add-block') modalAccounts.appendChild(modalBlock());
+    else if(action==='remove-block'){ const blk=b.closest('.modal-account'); if(modalAccounts.children.length>1) blk.remove(); else { blk.querySelectorAll('input,textarea').forEach(i=>{ if(i.type==='checkbox')i.checked=false; else i.value=''; }); blk.querySelector('.cf-list').innerHTML=''; updateStrength(blk.querySelector('.m-pass')); toast('Tiene que haber al menos una cuenta'); } }
+    else if(action==='add-field') b.closest('.modal-account').querySelector('.cf-list').appendChild(cfRow());
+    else if(action==='remove-field') b.closest('.cf-row').remove();
+    else if(action==='toggle-modal-pass') togglePassInput(b.closest('.pass-input').querySelector('.m-pass'),b);
+    else if(action==='gen-pass-modal'){ const blk=b.closest('.modal-account'); fillGenerated(blk.querySelector('.m-pass'), blk.querySelector('[data-action="toggle-modal-pass"]')); }
+  });
+  overlay.addEventListener('input',e=>{ if(e.target.classList&&e.target.classList.contains('m-pass')) updateStrength(e.target); });
+  overlay.addEventListener('keydown',e=>{ if(e.target.classList&&e.target.classList.contains('m-user')) maybeAutofillUser(e); });
+
+  /* ---------- exportar / importar ---------- */
+  function dateStr(){ return new Date().toISOString().slice(0,10); }
+  function downloadText(text,filename){ const blob=new Blob([text],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+  function exportData(){
+    const raw=localStorage.getItem(KEY_VAULT);
+    if(!raw){ toast('No hay datos para exportar'); return; }
+    downloadText(raw,'contrasenas-cifrado-'+dateStr()+'.json');
+    localStorage.setItem(KEY_EXPORT,String(Date.now()));
+    hideBanner();
+    toast('Copia de seguridad (cifrada) exportada');
+  }
+  const importInput=document.createElement('input'); importInput.type='file'; importInput.accept='application/json,.json'; importInput.style.display='none'; document.body.appendChild(importInput);
+  importInput.addEventListener('change',()=>{ const f=importInput.files[0]; if(f) importData(f); importInput.value=''; });
+  function importData(file){
+    const r=new FileReader();
+    r.onload=()=>{
+      let obj; try{ obj=JSON.parse(r.result); }catch(e){ alert('El archivo no es válido.'); return; }
+      if(obj&&obj.ct&&obj.salt&&obj.iv){
+        if(!confirm('Vas a reemplazar tus datos por los de esta copia cifrada.\nDespués vas a desbloquear con la contraseña de esa copia. ¿Continuar?')) return;
+        localStorage.setItem(KEY_VAULT,JSON.stringify(obj)); localStorage.setItem(KEY_FAILS,'0');
+        vault=obj; cryptoKey=null; data={version:2,cards:[]}; inlineEditIds.clear(); newAccountIds.clear();
+        stopTotp(); clearTimeout(inactivityTimer);
+        showLock(); toast('Copia importada. Desbloqueá con su contraseña.');
+      } else if(obj&&Array.isArray(obj.cards)){
+        if(!cryptoKey){ alert('Desbloqueá la app antes de importar.'); return; }
+        if(!confirm('Vas a reemplazar tus datos actuales por los del archivo.\nSe van a cifrar con tu clave actual. ¿Continuar?')) return;
+        data=normalize(obj); save(); render(); toast('Datos importados y cifrados');
+      } else alert('El archivo no tiene un formato reconocido.');
+    };
+    r.readAsText(file);
+  }
+
+  /* ---------- recordatorio de respaldo ---------- */
+  function maybeShowBanner(){
+    const el=$('backupBanner');
+    if(bannerDismissed){ el.style.display='none'; return; }
+    const hasData=data.cards.some(c=>!c.deleted);
+    const last=parseInt(localStorage.getItem(KEY_EXPORT)||'0',10);
+    const stale=!last||(Date.now()-last>BACKUP_REMIND_DAYS*DAY);
+    el.style.display=(hasData&&stale)?'block':'none';
+  }
+  function hideBanner(){ bannerDismissed=true; $('backupBanner').style.display='none'; }
+
+  /* ---------- tema ---------- */
+  function applyTheme(t){ document.documentElement.setAttribute('data-theme',t); const b=$('themeBtn'); if(b)b.innerHTML=t==='dark'?ICON.sun:ICON.moon; try{localStorage.setItem(KEY_THEME,t);}catch(e){} }
+
+  // Vista "lista": las mismas tarjetas, pero forzadas a una sola columna y con
+  // estilo más chato/compacto (ver CSS .grid.list-mode) — para quien tenga
+  // muchas contraseñas y los recuadros flotantes lo maréen.
+  function applyViewMode(m){
+    viewMode=m;
+    const b=$('viewModeBtn');
+    if(b){ b.innerHTML=m==='list'?ICON.gridView:ICON.listView; b.title=m==='list'?'Cambiar a vista de tarjetas':'Cambiar a vista lista'; }
+    grid.classList.toggle('list-mode', m==='list');
+    try{ localStorage.setItem(KEY_VIEW_MODE,m); }catch(e){}
+  }
+
+  /* ---------- ajustes ---------- */
+  const settingsOverlay=$('settingsOverlay');
+  function setSettingsError(m){ const e=$('setError'); if(e)e.textContent=m||''; }
+  function updateAutoLockMinRowVisibility(){ $('autoLockMinRow').style.display=autoLockOn?'flex':'none'; }
+  function openSettings(){
+    ['setCurrent','setNew','setNew2'].forEach(id=>{ const el=$(id); el.value=''; el.type='password'; });
+    $('setDefaultEmail').value=data.defaultEmail||'';
+    $('setEmailMsg').textContent='';
+    $('setHint').value=vaultHint||'';
+    $('setAutoLockOn').checked=autoLockOn;
+    $('setAutoLockMin').value=autoLockMin;
+    updateAutoLockMinRowVisibility();
+    $('setAutoReorg').checked=autoReorgOn;
+    $('setHealthPanel').checked=healthPanelOn;
+    settingsOverlay.querySelectorAll('[data-set="toggle"]').forEach(b=>b.innerHTML=ICON.eye);
+    // "Cambiar clave maestra" arranca siempre plegada — es la sección más larga
+    // y la que menos se usa, así el modal entra de un vistazo sin scrollear.
+    const pwSection=$('masterPwSection');
+    pwSection.classList.remove('open');
+    pwSection.querySelector('.settings-collapse-head').setAttribute('aria-expanded','false');
+    setSettingsError(''); settingsOverlay.classList.add('open');
+  }
+  function closeSettings(){ settingsOverlay.classList.remove('open'); }
+  async function changeMasterPassword(cur,nw,hint){
+    const stored=JSON.parse(localStorage.getItem(KEY_VAULT));
+    const oldKey=await deriveKey(cur,b64ToBuf(stored.salt),stored.iters);
+    try{ await decryptData(oldKey,stored.iv,stored.ct); }catch(e){ const err=new Error('x'); err.code='CURRENT_WRONG'; throw err; }
+    const salt=crypto.getRandomValues(new Uint8Array(16));
+    vaultSaltB64=bufToB64(salt); vaultHint=hint; cryptoKey=await deriveKey(nw,salt); await save();
+  }
+  async function saveSettings(){
+    // Si alguien clickea "Guardar cambios" con la sección plegada (p.ej. sin querer,
+    // o navegando con teclado), la desplegamos para que el error de validación
+    // no quede escondido dentro de un contenedor con altura cero.
+    const pwSection=$('masterPwSection');
+    if(!pwSection.classList.contains('open')){
+      pwSection.classList.add('open');
+      pwSection.querySelector('.settings-collapse-head').setAttribute('aria-expanded','true');
+    }
+    const cur=$('setCurrent').value, nw=$('setNew').value, nw2=$('setNew2').value, hint=$('setHint').value.trim();
+    if(!cur){ setSettingsError('Ingresá tu clave actual.'); return; }
+    if(nw.length<4){ setSettingsError('La nueva clave debe tener al menos 4 caracteres.'); return; }
+    if(nw!==nw2){ setSettingsError('La nueva clave y su repetición no coinciden.'); return; }
+    setSettingsError('');
+    const btn=settingsOverlay.querySelector('[data-set="save"]'); btn.disabled=true; btn.textContent='Guardando...';
+    try{ await changeMasterPassword(cur,nw,hint); closeSettings(); toast('Clave maestra actualizada'); }
+    catch(e){ if(e.code==='CURRENT_WRONG') setSettingsError('La clave actual es incorrecta.'); else { console.error(e); setSettingsError('No se pudo cambiar la clave.'); } }
+    finally{ btn.disabled=false; btn.textContent='Guardar cambios'; }
+  }
+  function saveDefaultEmail(){
+    const v=$('setDefaultEmail').value.trim();
+    data.defaultEmail=v; save();
+    const m=$('setEmailMsg'); if(m){ m.textContent=v?'✓ Guardado. Usá Tab en el campo de usuario para autocompletar.':'✓ Borrado.'; }
+    toast(v?'Correo predeterminado guardado':'Correo predeterminado borrado');
+  }
+  settingsOverlay.addEventListener('click',e=>{
+    if(e.target===settingsOverlay){ closeSettings(); return; }
+    const b=e.target.closest('[data-set]'); if(!b)return;
+    const a=b.dataset.set;
+    if(a==='close') closeSettings();
+    else if(a==='save') saveSettings();
+    else if(a==='save-email') saveDefaultEmail();
+    else if(a==='toggle') togglePassInput(b.closest('.pass-input').querySelector('input'),b);
+    else if(a==='delete-all'){ if(factoryReset()) closeSettings(); }
+    else if(a==='toggle-master-pw'){
+      const sec=$('masterPwSection'); const nowOpen=sec.classList.toggle('open');
+      b.setAttribute('aria-expanded', nowOpen?'true':'false');
+      if(nowOpen) setTimeout(()=>$('setCurrent').focus(),280); // 280ms = dura la animación de despliegue
+    }
+  });
+  // Las preferencias (switches + minutos) se guardan al toque, sin botón "Guardar" —
+  // son ajustes chicos, no algo que uno quiera "cancelar" como la clave maestra.
+  settingsOverlay.addEventListener('change',e=>{
+    const t=e.target;
+    if(t.id==='setAutoLockOn'){
+      autoLockOn=t.checked;
+      try{ localStorage.setItem(KEY_AUTOLOCK_ON, autoLockOn?'1':'0'); }catch(_){}
+      updateAutoLockMinRowVisibility(); resetInactivity();
+      toast(autoLockOn?'Bloqueo automático activado':'Bloqueo automático desactivado');
+    } else if(t.id==='setAutoLockMin'){
+      let v=parseInt(t.value,10);
+      if(!Number.isFinite(v)||v<1) v=1; if(v>180) v=180;
+      t.value=v; autoLockMin=v;
+      try{ localStorage.setItem(KEY_AUTOLOCK_MIN,String(v)); }catch(_){}
+      resetInactivity();
+      toast('Bloqueo automático: '+v+' min');
+    } else if(t.id==='setAutoReorg'){
+      autoReorgOn=t.checked;
+      try{ localStorage.setItem(KEY_AUTOREORG, autoReorgOn?'1':'0'); }catch(_){}
+      toast(autoReorgOn?'Reorganización automática activada':'Reorganización automática desactivada');
+    } else if(t.id==='setHealthPanel'){
+      healthPanelOn=t.checked;
+      try{ localStorage.setItem(KEY_HEALTH_PANEL, healthPanelOn?'1':'0'); }catch(_){}
+      if(!healthPanelOn) issueFilter=''; // si se oculta el panel, no dejamos un filtro invisible activo
+      if(currentView==='active') render();
+      toast(healthPanelOn?'Panel de salud activado':'Panel de salud desactivado');
+    }
+  });
+  settingsOverlay.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeSettings();return;} if(e.key==='Enter'){ e.preventDefault(); if(e.target&&e.target.id==='setDefaultEmail') saveDefaultEmail(); else if(e.target&&e.target.id!=='setAutoLockMin') saveSettings(); } });
+
+  /* ---------- pantalla bloqueo / setup ---------- */
+  const gate=$('gate');
+  const appEl=$('app');
+  function getFails(){ return parseInt(localStorage.getItem(KEY_FAILS)||'0',10)||0; }
+  function setFails(n){ try{ localStorage.setItem(KEY_FAILS,String(n)); }catch(e){} }
+  function gateError(m){ const e=gate.querySelector('#gerror'); if(e)e.textContent=m||''; }
+
+  function setupHTML(){ return '<div class="gate-card"><div class="gate-logo">'+ICON.shield+'</div><h1>Creá tu contraseña maestra</h1><p class="gate-sub">Con esta clave se cifra todo. Te la vamos a pedir cada vez que abras la app.</p><div class="gate-field"><label>Contraseña maestra</label><div class="gate-pass"><input id="gpw" class="gate-pw" type="password" placeholder="Elegí una clave" autocomplete="new-password"><button class="icon-btn" data-gate="toggle-pw" type="button">'+ICON.eye+'</button></div></div><div class="gate-field"><label>Repetí la contraseña</label><input id="gpw2" class="gate-pw" type="password" placeholder="La misma de arriba" autocomplete="new-password"></div><div class="gate-field"><label>Pista (opcional)</label><input id="ghint" type="text" placeholder="Un recordatorio para vos" autocomplete="off"><small class="gate-note">No escribas acá la contraseña. Es solo una ayuda.</small></div><div id="gerror" class="gate-error"></div><button class="btn primary gate-btn" data-gate="setup-submit">Crear y entrar</button><div class="gate-warn">'+ICON.alert+' <span>Anotá tu contraseña en un lugar seguro. Si te la olvidás, <b>no se puede recuperar</b>: solo vas a poder restablecer la app y empezar de cero.</span></div></div>'; }
+  function lockHTML(hint){ return '<div class="gate-card"><div class="gate-logo">'+ICON.lockBig+'</div><h1>Mis Contraseñas</h1><p class="gate-sub">Ingresá tu contraseña maestra para entrar.</p><div class="gate-field"><div class="gate-pass"><input id="gpw" class="gate-pw" type="password" placeholder="Contraseña maestra" autocomplete="current-password"><button class="icon-btn" data-gate="toggle-pw" type="button">'+ICON.eye+'</button></div></div>'+(hint?'<div class="gate-hint">'+ICON.bulb+' <span><b>Pista:</b> '+escapeHtml(hint)+'</span></div>':'')+'<div id="gerror" class="gate-error"></div><button class="btn primary gate-btn" id="gunlock" data-gate="unlock">Desbloquear</button><div id="greset" class="gate-reset" style="display:none"><p>¿Te olvidaste la contraseña? Podés restablecer la app y empezar de cero (se borran los datos guardados).</p><button class="btn danger gate-btn" data-gate="reset">Restablecer de fábrica</button></div></div>'; }
+  function unsupportedHTML(){ return '<div class="gate-card"><div class="gate-logo">'+ICON.alert+'</div><h1>No se puede cifrar aquí</h1><p class="gate-sub">Tu navegador no habilitó el cifrado en este contexto. Abrí <b>index.html</b> con Chrome, Edge o Firefox (doble clic).</p></div>'; }
+
+  function showSetup(){ appEl.style.display='none'; gate.style.display='flex'; gate.innerHTML=setupHTML(); setTimeout(()=>{const i=gate.querySelector('#gpw'); if(i)i.focus();},50); }
+  function showLock(){ vault=JSON.parse(localStorage.getItem(KEY_VAULT)||'null'); appEl.style.display='none'; gate.style.display='flex'; gate.innerHTML=lockHTML(vault&&vault.hint); if(getFails()>=RESET_LIMIT){ const r=gate.querySelector('#greset'); if(r)r.style.display='block'; } setTimeout(()=>{const i=gate.querySelector('#gpw'); if(i)i.focus();},50); }
+  function enterApp(){
+    gate.style.display='none'; gate.innerHTML='';
+    appEl.style.display=''; currentView='active'; searchQuery=''; categoryFilter=''; bannerDismissed=false;
+    inlineEditIds.clear(); newAccountIds.clear();
+    const s=$('search'); if(s)s.value=''; $('clearSearch').style.display='none';
+    purgeTrash(); render(); maybeShowBanner(); startTotp(); resetInactivity();
+  }
+  function getExistingPlaintext(){ try{ const raw=localStorage.getItem(KEY_OLD); if(raw) return normalize(JSON.parse(raw)); }catch(e){} return {version:2,cards:[]}; }
+
+  async function doSetup(){
+    const pw=gate.querySelector('#gpw').value, pw2=gate.querySelector('#gpw2').value, hint=gate.querySelector('#ghint').value.trim();
+    if(pw.length<4){ gateError('La contraseña debe tener al menos 4 caracteres.'); return; }
+    if(pw!==pw2){ gateError('Las contraseñas no coinciden.'); return; }
+    gateError('');
+    try{ data=getExistingPlaintext(); const salt=crypto.getRandomValues(new Uint8Array(16)); vaultSaltB64=bufToB64(salt); vaultHint=hint; cryptoKey=await deriveKey(pw,salt); await save(); localStorage.removeItem(KEY_OLD); setFails(0); enterApp(); }
+    catch(e){ console.error(e); gateError('No se pudo crear la clave. Probá de nuevo.'); }
+  }
+  async function doUnlock(){
+    const pw=gate.querySelector('#gpw').value; if(!pw)return;
+    const btn=gate.querySelector('#gunlock'); btn.disabled=true; btn.textContent='Verificando...';
+    try{
+      const key=await deriveKey(pw,b64ToBuf(vault.salt),vault.iters);
+      const obj=await decryptData(key,vault.iv,vault.ct);
+      cryptoKey=key; vaultSaltB64=vault.salt; vaultHint=vault.hint||''; data=normalize(obj); setFails(0); enterApp();
+    }catch(e){
+      const n=getFails()+1; setFails(n); btn.disabled=false; btn.textContent='Desbloquear';
+      gateError('Contraseña incorrecta. Intento '+n+'.');
+      const inp=gate.querySelector('#gpw'); if(inp){ inp.value=''; inp.focus(); }
+      if(n>=RESET_LIMIT){ const r=gate.querySelector('#greset'); if(r)r.style.display='block'; }
+    }
+  }
+  // Borra TODO (bóveda cifrada, intentos fallidos, marca de export) y vuelve a
+  // la pantalla de "creá tu contraseña maestra". Se usa tanto desde la pantalla
+  // de bloqueo (tras muchos intentos fallidos) como desde Ajustes → Zona de
+  // peligro. Confirmación en dos pasos a propósito: un solo clic accidental
+  // no puede borrar años de contraseñas guardadas.
+  // Devuelve true si el borrado se efectuó (para que quien la llama sepa si
+  // debe, por ejemplo, cerrar el modal de Ajustes).
+  function factoryReset(){
+    if(!confirm('⚠️ ATENCIÓN\n\nEsto borra TODAS las contraseñas guardadas y la clave maestra. No se puede deshacer.\n\n¿Estás seguro de que querés continuar?')) return false;
+    const typed=prompt('Última confirmación.\n\nPara borrar todo y empezar de cero, escribí la palabra:\n\nCONFIRMAR');
+    if(typed===null) return false;
+    if(typed.trim().toUpperCase()!=='CONFIRMAR'){ alert('No se restableció nada.\n\nEl texto no coincidía con CONFIRMAR.'); return false; }
+    try{ localStorage.removeItem(KEY_VAULT); localStorage.removeItem(KEY_OLD); localStorage.removeItem(KEY_FAILS); localStorage.removeItem(KEY_EXPORT); }catch(e){}
+    vault=null; cryptoKey=null; data={version:2,cards:[]}; inlineEditIds.clear(); newAccountIds.clear();
+    stopTotp(); clearTimeout(inactivityTimer); showSetup();
+    return true;
+  }
+  function lockNow(){ cryptoKey=null; data={version:2,cards:[]}; inlineEditIds.clear(); newAccountIds.clear(); stopTotp(); clearTimeout(inactivityTimer); showLock(); }
+
+  gate.addEventListener('click',e=>{
+    const b=e.target.closest('[data-gate]'); if(!b)return;
+    const a=b.dataset.gate;
+    if(a==='setup-submit') doSetup();
+    else if(a==='unlock') doUnlock();
+    else if(a==='reset') factoryReset();
+    else if(a==='toggle-pw'){ const inputs=gate.querySelectorAll('.gate-pw'); const show=inputs[0]&&inputs[0].type==='password'; inputs.forEach(i=>i.type=show?'text':'password'); b.innerHTML=show?ICON.eyeOff:ICON.eye; }
+  });
+  gate.addEventListener('keydown',e=>{ if(e.key!=='Enter')return; if(gate.querySelector('[data-gate="setup-submit"]')) doSetup(); else if(gate.querySelector('[data-gate="unlock"]')) doUnlock(); });
+
+  /* ---------- bloqueo automático por inactividad ---------- */
+  function resetInactivity(){
+    clearTimeout(inactivityTimer);
+    if(!cryptoKey||!autoLockOn) return; // el usuario puede desactivarlo del todo en Ajustes
+    const ms=Math.max(1,autoLockMin)*60*1000;
+    inactivityTimer=setTimeout(()=>{ if(cryptoKey) lockNow(); }, ms);
+  }
+  ['click','keydown','mousemove','touchstart','scroll'].forEach(ev=>document.addEventListener(ev,resetInactivity,{passive:true}));
+
+  /* ---------- encabezado ---------- */
+  const searchEl=$('search'), clearEl=$('clearSearch');
+  searchEl.addEventListener('input',e=>{ searchQuery=e.target.value.trim().toLowerCase(); clearEl.style.display=e.target.value?'block':'none'; render(); });
+  clearEl.addEventListener('click',()=>{ searchEl.value=''; searchQuery=''; clearEl.style.display='none'; render(); searchEl.focus(); });
+  document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{ currentView=t.dataset.view; render(); }));
+  $('newBtn').addEventListener('click',()=>openModal('create'));
+  $('exportBtn').addEventListener('click',exportData);
+  $('importBtn').addEventListener('click',()=>importInput.click());
+  $('settingsBtn').innerHTML=ICON.gear;
+  $('lockBtn').innerHTML=ICON.lockSm;
+  $('settingsBtn').addEventListener('click',openSettings);
+  $('lockBtn').addEventListener('click',lockNow);
+  $('themeBtn').addEventListener('click',()=>{ const cur=document.documentElement.getAttribute('data-theme'); applyTheme(cur==='dark'?'light':'dark'); });
+  $('viewModeBtn').addEventListener('click',()=>{ applyViewMode(viewMode==='list'?'cards':'list'); render(); });
+  function updateSortUI(){ document.querySelectorAll('.sort-opt').forEach(b=>b.classList.toggle('active',b.dataset.sort===sortMode)); }
+  $('sideSort').addEventListener('click',e=>{
+    const b=e.target.closest('[data-sort]'); if(!b)return;
+    sortMode=b.dataset.sort;
+    try{ localStorage.setItem(KEY_SORT_MODE,sortMode); }catch(_){}
+    updateSortUI();
+    render();
+  });
+  $('bannerExport').addEventListener('click',exportData);
+  $('bannerClose').addEventListener('click',hideBanner);
+  $('emptyTrashBtn').addEventListener('click',emptyTrash);
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&overlay.classList.contains('open'))closeModal(); if((e.ctrlKey||e.metaKey)&&e.key==='Enter'&&overlay.classList.contains('open'))saveModal(); });
+  // Recalcular columnas al cambiar el ancho (solo si cambia la cantidad y no estás en medio de una edición)
+  let resizeTimer=null;
+  window.addEventListener('resize',()=>{ clearTimeout(resizeTimer); resizeTimer=setTimeout(()=>{ if(cryptoKey && !overlay.classList.contains('open') && inlineEditIds.size===0 && colCount()!==lastColCount) render(); },160); });
+
+  // Lee las preferencias configurables de localStorage, con valores por
+  // defecto sensatos si todavía no se guardó nada (primera vez que se abre).
+  function loadPreferences(){
+    try{ autoLockOn = localStorage.getItem(KEY_AUTOLOCK_ON)!=='0'; }catch(e){}
+    try{
+      const m=parseInt(localStorage.getItem(KEY_AUTOLOCK_MIN),10);
+      if(Number.isFinite(m)&&m>=1&&m<=180) autoLockMin=m;
+    }catch(e){}
+    try{ autoReorgOn = localStorage.getItem(KEY_AUTOREORG)!=='0'; }catch(e){}
+    try{ healthPanelOn = localStorage.getItem(KEY_HEALTH_PANEL)!=='0'; }catch(e){}
+    try{ viewMode = localStorage.getItem(KEY_VIEW_MODE)==='list'?'list':'cards'; }catch(e){}
+    try{
+      const sm=localStorage.getItem(KEY_SORT_MODE);
+      if(['manual','az','za','newest','oldest'].includes(sm)) sortMode=sm;
+    }catch(e){}
+  }
+
+  /* ---------- inicio ---------- */
+  function init(){
+    let t='light'; try{ t=localStorage.getItem(KEY_THEME)||'light'; }catch(e){}
+    applyTheme(t);
+    loadPreferences();
+    applyViewMode(viewMode);
+    updateSortUI();
+    if(!(window.crypto&&crypto.subtle&&crypto.getRandomValues)){ appEl.style.display='none'; gate.style.display='flex'; gate.innerHTML=unsupportedHTML(); return; }
+    let raw=null; try{ raw=localStorage.getItem(KEY_VAULT); }catch(e){}
+    if(raw){ try{ vault=JSON.parse(raw); }catch(e){ vault=null; } }
+    if(vault&&vault.ct) showLock(); else showSetup();
+  }
+  init();
+
+  // App instalable: registra el service worker (ver sw.js) para que funcione
+  // sin internet una vez instalada. Los service workers solo se pueden
+  // registrar en un "contexto seguro" (https, o http://localhost) — nunca en
+  // file://, que es como se abre el archivo local a doble clic. Por eso todo
+  // esto está protegido: si falla (porque estás en file://, o el navegador no
+  // soporta service workers), simplemente no hace nada y la app sigue
+  // funcionando exactamente igual que siempre.
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+    });
+  }
+})();
+</script>
+</body>
+</html>
