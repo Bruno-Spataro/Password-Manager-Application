@@ -89,16 +89,22 @@
 
   main{max-width:1180px; margin:0 auto; padding:18px 20px 60px}
   /* Orden: en pantallas normales es una fila de chips arriba de las tarjetas.
-     En pantallas bien anchas (donde sobra espacio a los costados del
-     contenido centrado) se convierte en una columna fija pegada al margen
-     izquierdo, aprovechando ese espacio que si no queda vacío. */
+     En pantallas anchas se convierte en una columna fija pegada al margen
+     izquierdo. El umbral (1280px) y el ancho de las tarjetas de acá abajo
+     están pensados para que entre en un notebook de 15.6" común — que con
+     el escalado de Windows al 125% (lo normal en Windows, no el 100% "real")
+     el navegador ve como si tuviera ~1530px de ancho, no los 1920px físicos. */
   .side-sort{max-width:1180px; margin:0 auto 14px; padding:0 20px; display:flex; flex-wrap:wrap; align-items:center; gap:8px}
   .side-sort-label{font-size:12px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:.5px; margin-right:2px; flex-shrink:0}
   .sort-opt{cursor:pointer; border:1px solid var(--border); background:var(--surface); color:var(--muted); font-family:inherit; font-size:12.5px; font-weight:600; padding:7px 12px; border-radius:20px; transition:.15s}
   .sort-opt:hover{color:var(--text); border-color:var(--primary)}
   .sort-opt.active{background:var(--primary); color:#fff; border-color:var(--primary)}
-  @media (min-width:1600px){
-    .side-sort{position:fixed; top:110px; left:calc(50% - 770px); width:160px; max-width:160px; margin:0; padding:0; flex-direction:column; align-items:stretch; gap:6px}
+  @media (min-width:1280px){
+    /* Las tarjetas se achican un poco (nunca menos de 880px) para dejarle
+       lugar al panel a la izquierda; en monitores bien anchos vuelven a su
+       ancho completo de 1180px solas, sin que haga falta otro punto de corte. */
+    main{max-width:clamp(880px, 100vw - 400px, 1180px)}
+    .side-sort{position:fixed; top:110px; left:12px; width:160px; max-width:160px; margin:0; padding:0; flex-direction:column; align-items:stretch; gap:6px}
     .side-sort-label{margin:0 0 6px 4px}
     .sort-opt{text-align:left; border-radius:9px; padding:9px 12px}
   }
