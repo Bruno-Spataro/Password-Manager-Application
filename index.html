@@ -263,7 +263,7 @@
   #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
   #toast svg{color:var(--success); flex-shrink:0}
   footer{max-width:1180px; margin:0 auto; padding:0 20px 40px; text-align:center; color:var(--faint); font-size:12.5px}
-  footer .sec{display:inline-flex; align-items:center; gap:6px}
+  footer .sec svg{vertical-align:-3px; margin-right:6px}
 
   #gate{position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; padding:24px; background:linear-gradient(180deg,var(--bg),var(--bg2))}
   .gate-card{width:100%; max-width:400px; background:var(--surface); border:1px solid var(--border); border-radius:22px; box-shadow:var(--shadow-lg); padding:30px 26px; text-align:center; animation:pop .2s ease}
@@ -293,6 +293,8 @@
     .btn .label-hide{display:none}
     .cf-row{grid-template-columns:1fr 1fr auto}
     .cf-secret{grid-column:1/-1; justify-content:flex-start}
+    .banner-inner{flex-wrap:wrap; align-items:flex-start}
+    .banner-inner #bannerExport{order:3; flex:1 1 100%; margin-top:2px}
   }
 </style>
 </head>
