@@ -1,3 +1,8 @@
-ruleta-fh5/
-ruleta-planes/
-.claude/
+# Ignora todo por defecto; solo se suben los archivos de la app de contraseñas
+/*
+!/index.html
+!/manifest.json
+!/sw.js
+!/icon-192.png
+!/icon-512.png
+!/.gitignore
