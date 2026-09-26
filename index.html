@@ -231,25 +231,24 @@
   .add-block-btn{width:100%; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer; border:1px dashed var(--border-2); background:transparent; color:var(--muted); font-family:inherit; font-size:13.5px; font-weight:600; padding:11px; border-radius:11px; transition:.15s}
   .add-block-btn:hover{border-color:var(--primary); color:var(--primary); background:var(--primary-soft)}
   .modal-foot{display:flex; justify-content:flex-end; gap:9px; padding:15px 20px; border-top:1px solid var(--border)}
-  .settings-section h3{margin:0 0 4px; font-size:15px; font-weight:700}
-  .settings-section p{margin:0 0 16px; font-size:13px; color:var(--muted)}
-  .settings-section label.f{margin-bottom:13px}
+  .settings-panel p{margin:0 0 16px; font-size:13px; color:var(--muted)}
+  .settings-panel label.f{margin-bottom:13px}
   .settings-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; border-top:1px solid var(--border); font-size:13.5px}
+  .settings-row:first-child{border-top:none}
   .settings-row .lbl{font-weight:600}
   .settings-row .desc{font-size:12px; color:var(--muted); margin-top:2px; max-width:360px}
   /* mismo look que el resto de los inputs de la app — sin esto, el navegador le
      pone su estilo nativo (fondo blanco, tipografía del sistema) y desentona feo */
   .settings-row input[type=number]{width:64px; text-align:center; padding:7px 6px; flex-shrink:0; font-family:inherit; font-size:14px; color:var(--text); background:var(--surface); border:1px solid var(--border); border-radius:9px; outline:none; transition:.15s}
   .settings-row input[type=number]:focus{border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-soft)}
-  /* sección plegable dentro de Ajustes (mismo truco grid-template-rows que las tarjetas) */
-  .settings-collapse-head{display:flex; align-items:center; justify-content:space-between; width:100%; background:none; border:none; padding:0; margin:0; cursor:pointer; font:inherit; color:inherit; text-align:left}
-  .settings-collapse-head:hover h3{color:var(--primary)}
-  .settings-collapse-head .chev{color:var(--muted); flex-shrink:0; transition:transform .25s cubic-bezier(.4,0,.2,1)}
-  .settings-section.open .settings-collapse-head .chev{transform:rotate(180deg)}
-  .settings-collapse-body{display:grid; grid-template-rows:0fr; transition:grid-template-rows .28s cubic-bezier(.4,0,.2,1)}
-  .settings-section.open .settings-collapse-body{grid-template-rows:1fr}
-  .settings-collapse-body-inner{overflow:hidden; min-height:0}
-  .settings-collapse-body-inner>p{margin-top:12px}
+  /* menú principal de Ajustes: cada fila es su propia pantalla separada, no un acordeón */
+  .settings-nav-item{display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; background:none; border:none; border-top:1px solid var(--border); padding:15px 2px; margin:0; cursor:pointer; font:inherit; color:inherit; text-align:left; transition:.15s}
+  .settings-nav-item:first-child{border-top:none}
+  .settings-nav-item:hover{background:var(--surface-2)}
+  .settings-nav-item .lbl{font-weight:700; font-size:15px}
+  .settings-nav-item .desc{font-size:12.5px; color:var(--muted); margin-top:3px}
+  .settings-nav-item svg{color:var(--faint); flex-shrink:0}
+  .settings-nav-item.danger .lbl{color:var(--danger)}
   /* interruptor tipo iOS, hecho con un checkbox nativo (accesible) + 2 spans pintados */
   .switch{position:relative; display:inline-block; width:44px; height:26px; flex-shrink:0}
   .switch input{position:absolute; inset:0; opacity:0; margin:0; cursor:pointer; z-index:1}
@@ -398,41 +397,64 @@
   </div>
 </div>
 
-<!-- Modal Ajustes -->
+<!-- Modal Ajustes: un menú principal con 4 accesos, cada uno abre su propio
+     panel separado (con flecha para volver), en vez de todo apilado en una
+     sola pantalla larga. -->
 <div class="overlay" id="settingsOverlay">
   <div class="modal" role="dialog" aria-modal="true">
     <div class="modal-head">
-      <h2>Ajustes</h2>
+      <div style="display:flex; align-items:center; gap:8px; min-width:0">
+        <button class="icon-btn" id="settingsBack" data-set="back" title="Volver" style="display:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+        <h2 id="settingsTitle" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap">Ajustes</h2>
+      </div>
       <button class="icon-btn" data-set="close" title="Cerrar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="modal-body">
-      <div class="settings-section">
-        <h3>Correo / usuario predeterminado</h3>
+
+      <!-- Menú principal -->
+      <div id="settingsMenu" class="settings-menu">
+        <button type="button" class="settings-nav-item" data-set="nav" data-nav="email">
+          <div><div class="lbl">Correo / usuario predeterminado</div><div class="desc">Autocompletar con Tab en cualquier cuenta.</div></div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+        <button type="button" class="settings-nav-item" data-set="nav" data-nav="masterpw">
+          <div><div class="lbl">Cambiar clave maestra</div><div class="desc">La clave con la que entrás a la app.</div></div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+        <button type="button" class="settings-nav-item" data-set="nav" data-nav="prefs">
+          <div><div class="lbl">Preferencias</div><div class="desc">Bloqueo automático, columnas, notificaciones.</div></div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+        <button type="button" class="settings-nav-item danger" data-set="nav" data-nav="danger">
+          <div><div class="lbl">Zona de peligro</div><div class="desc">Borrar todos los datos.</div></div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+        <div style="text-align:center; font-size:11px; color:var(--faint); margin-top:14px" id="settingsVersion"></div>
+      </div>
+
+      <!-- Panel: correo predeterminado -->
+      <div id="panel-email" class="settings-panel" style="display:none">
         <p>Cargá tu mail más usado. Después, en el campo "Usuario / correo" de cualquier cuenta, lo tocás y apretás <b>Tab</b> y se autocompleta solo (igual lo podés cambiar a mano).</p>
         <label class="f">Tu correo o usuario<div class="pass-input"><input id="setDefaultEmail" type="text" autocomplete="off" placeholder="Ej: usuario@gmail.com"><button type="button" class="btn primary sm" data-set="save-email" style="flex-shrink:0">Guardar</button></div></label>
         <div id="setEmailMsg" style="font-size:12.5px;font-weight:600;color:var(--success);min-height:16px"></div>
       </div>
-      <div style="border-top:1px solid var(--border); margin:4px 0 18px"></div>
-      <div class="settings-section" id="masterPwSection">
-        <button type="button" class="settings-collapse-head" data-set="toggle-master-pw" aria-expanded="false">
-          <h3>Cambiar clave maestra</h3>
-          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-        </button>
-        <div class="settings-collapse-body">
-          <div class="settings-collapse-body-inner">
-            <p>Para cambiarla, ingresá tu clave actual y después la nueva.</p>
-            <label class="f">Clave actual<div class="pass-input"><input id="setCurrent" type="password" autocomplete="current-password" placeholder="Tu clave de ahora"><button type="button" class="icon-btn" data-set="toggle" title="Mostrar/ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
-            <label class="f">Nueva clave<div class="pass-input"><input id="setNew" type="password" autocomplete="new-password" placeholder="La nueva clave"><button type="button" class="icon-btn" data-set="toggle" title="Mostrar/ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
-            <label class="f">Repetí la nueva clave<div class="pass-input"><input id="setNew2" type="password" autocomplete="new-password" placeholder="La nueva clave otra vez"><button type="button" class="icon-btn" data-set="toggle" title="Mostrar/ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
-            <label class="f">Pista (opcional)<input id="setHint" type="text" autocomplete="off" placeholder="Recordatorio para la pantalla de bloqueo"></label>
-            <div id="setError" class="gate-error" style="text-align:left"></div>
-          </div>
+
+      <!-- Panel: cambiar clave maestra -->
+      <div id="panel-masterpw" class="settings-panel" style="display:none">
+        <p>Para cambiarla, ingresá tu clave actual y después la nueva.</p>
+        <label class="f">Clave actual<div class="pass-input"><input id="setCurrent" type="password" autocomplete="current-password" placeholder="Tu clave de ahora"><button type="button" class="icon-btn" data-set="toggle" title="Mostrar/ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
+        <label class="f">Nueva clave<div class="pass-input"><input id="setNew" type="password" autocomplete="new-password" placeholder="La nueva clave"><button type="button" class="icon-btn" data-set="toggle" title="Mostrar/ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
+        <label class="f">Repetí la nueva clave<div class="pass-input"><input id="setNew2" type="password" autocomplete="new-password" placeholder="La nueva clave otra vez"><button type="button" class="icon-btn" data-set="toggle" title="Mostrar/ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
+        <label class="f">Pista (opcional)<input id="setHint" type="text" autocomplete="off" placeholder="Recordatorio para la pantalla de bloqueo"></label>
+        <div id="setError" class="gate-error" style="text-align:left"></div>
+        <div style="display:flex; justify-content:flex-end; gap:9px; margin-top:16px">
+          <button class="btn ghost" data-set="back">Cancelar</button>
+          <button class="btn primary" data-set="save">Guardar cambios</button>
         </div>
       </div>
 
-      <div style="border-top:1px solid var(--border); margin:4px 0 18px"></div>
-      <div class="settings-section">
-        <h3>Preferencias</h3>
+      <!-- Panel: preferencias -->
+      <div id="panel-prefs" class="settings-panel" style="display:none">
         <div class="settings-row">
           <div><div class="lbl">Bloqueo automático</div><div class="desc">Bloquea la app sola después de un rato sin actividad.</div></div>
           <label class="switch"><input type="checkbox" id="setAutoLockOn"><span class="switch-track"><span class="switch-thumb"></span></span></label>
@@ -455,17 +477,12 @@
         </div>
       </div>
 
-      <div style="border-top:1px solid var(--border); margin:4px 0 18px"></div>
-      <div class="settings-section danger-zone">
-        <h3 style="color:var(--danger)">Zona de peligro</h3>
+      <!-- Panel: zona de peligro -->
+      <div id="panel-danger" class="settings-panel" style="display:none">
         <p>Esto borra <b>todo</b>: cada contraseña guardada, categorías y tu clave maestra. Es exactamente lo mismo que "Restablecer de fábrica" desde la pantalla de bloqueo. No hay forma de deshacerlo ni de recuperar los datos después.</p>
         <button type="button" class="btn danger" data-set="delete-all" style="width:100%; justify-content:center">Eliminar todos mis datos</button>
       </div>
-      <div style="text-align:center; font-size:11px; color:var(--faint); margin-top:14px" id="settingsVersion"></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn ghost" data-set="close">Cancelar</button>
-      <button class="btn primary" data-set="save">Guardar cambios</button>
+
     </div>
   </div>
 </div>
@@ -561,7 +578,7 @@
   // GitHub (no cada vez que se edita el archivo). Se muestra chiquito en el
   // pie de página y al final de Ajustes para ver de un vistazo si ya llegó
   // la última versión. También sirve para el aviso de "se actualizó la app".
-  const APP_VERSION='v2.30';
+  const APP_VERSION='v2.31';
   const KEY_APP_VERSION='mis_contrasenas_version_vista';
   const KEY_VAULT='mis_contrasenas_vault';
   const KEY_OLD='mis_contrasenas_v1';
@@ -1543,14 +1560,27 @@
     // (no desde acá), reflejarlo apagado aunque la preferencia guardada diga que sí.
     $('setNotifyUpdates').checked = notifyUpdatesOn && (typeof Notification==='undefined' || Notification.permission==='granted');
     settingsOverlay.querySelectorAll('[data-set="toggle"]').forEach(b=>b.innerHTML=ICON.eye);
-    // "Cambiar clave maestra" arranca siempre plegada — es la sección más larga
-    // y la que menos se usa, así el modal entra de un vistazo sin scrollear.
-    const pwSection=$('masterPwSection');
-    pwSection.classList.remove('open');
-    pwSection.querySelector('.settings-collapse-head').setAttribute('aria-expanded','false');
-    setSettingsError(''); settingsOverlay.classList.add('open');
+    setSettingsError('');
+    showSettingsMenu();
+    settingsOverlay.classList.add('open');
   }
   function closeSettings(){ settingsOverlay.classList.remove('open'); }
+  // Título de cada panel — se muestra arriba cuando estás adentro de esa pantalla.
+  const SETTINGS_TITLES={email:'Correo / usuario predeterminado', masterpw:'Cambiar clave maestra', prefs:'Preferencias', danger:'Zona de peligro'};
+  function showSettingsMenu(){
+    $('settingsMenu').style.display='';
+    settingsOverlay.querySelectorAll('.settings-panel').forEach(p=>p.style.display='none');
+    $('settingsBack').style.display='none';
+    $('settingsTitle').textContent='Ajustes';
+  }
+  function showSettingsPanel(key){
+    const panel=$('panel-'+key); if(!panel) return;
+    $('settingsMenu').style.display='none';
+    settingsOverlay.querySelectorAll('.settings-panel').forEach(p=>p.style.display=(p===panel?'':'none'));
+    $('settingsBack').style.display='';
+    $('settingsTitle').textContent=SETTINGS_TITLES[key]||'Ajustes';
+    if(key==='masterpw') setTimeout(()=>$('setCurrent').focus(),0);
+  }
   async function changeMasterPassword(cur,nw,hint){
     const stored=JSON.parse(localStorage.getItem(KEY_VAULT));
     const oldKey=await deriveKey(cur,b64ToBuf(stored.salt),stored.iters);
@@ -1559,14 +1589,6 @@
     vaultSaltB64=bufToB64(salt); vaultHint=hint; cryptoKey=await deriveKey(nw,salt); await save();
   }
   async function saveSettings(){
-    // Si alguien clickea "Guardar cambios" con la sección plegada (p.ej. sin querer,
-    // o navegando con teclado), la desplegamos para que el error de validación
-    // no quede escondido dentro de un contenedor con altura cero.
-    const pwSection=$('masterPwSection');
-    if(!pwSection.classList.contains('open')){
-      pwSection.classList.add('open');
-      pwSection.querySelector('.settings-collapse-head').setAttribute('aria-expanded','true');
-    }
     const cur=$('setCurrent').value, nw=$('setNew').value, nw2=$('setNew2').value, hint=$('setHint').value.trim();
     if(!cur){ setSettingsError('Ingresá tu clave actual.'); return; }
     if(nw.length<4){ setSettingsError('La nueva clave debe tener al menos 4 caracteres.'); return; }
@@ -1588,15 +1610,12 @@
     const b=e.target.closest('[data-set]'); if(!b)return;
     const a=b.dataset.set;
     if(a==='close') closeSettings();
+    else if(a==='back') showSettingsMenu();
     else if(a==='save') saveSettings();
     else if(a==='save-email') saveDefaultEmail();
     else if(a==='toggle') togglePassInput(b.closest('.pass-input').querySelector('input'),b);
     else if(a==='delete-all'){ if(factoryReset()) closeSettings(); }
-    else if(a==='toggle-master-pw'){
-      const sec=$('masterPwSection'); const nowOpen=sec.classList.toggle('open');
-      b.setAttribute('aria-expanded', nowOpen?'true':'false');
-      if(nowOpen) setTimeout(()=>$('setCurrent').focus(),280); // 280ms = dura la animación de despliegue
-    }
+    else if(b.dataset.nav) showSettingsPanel(b.dataset.nav);
   });
   // Las preferencias (switches + minutos) se guardan al toque, sin botón "Guardar" —
   // son ajustes chicos, no algo que uno quiera "cancelar" como la clave maestra.
