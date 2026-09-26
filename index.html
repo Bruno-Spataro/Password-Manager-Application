@@ -41,6 +41,7 @@
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
+  html{background:var(--bg)}
   body{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     background:linear-gradient(180deg,var(--bg),var(--bg2));
@@ -874,6 +875,12 @@
   }
 
   function render(){
+    // Reacomodar columnas vacía y vuelve a llenar la grilla (ver layoutInColumns),
+    // y medir la altura de cada tarjeta fuerza al navegador a recalcular el
+    // layout con la grilla momentáneamente vacía. En el celular eso hace que
+    // se recorte el scroll (como si ya no hubiera nada para bajar) y la
+    // página "salte" arriba. Guardamos la posición y la restauramos al final.
+    const scrollY=window.scrollY;
     buildReuseMap();
     const activeCards=data.cards.filter(c=>!c.deleted&&!c.archived);
     let archCount=data.cards.filter(c=>!c.deleted&&c.archived).length;
@@ -892,6 +899,7 @@
     else { $('healthPanel').style.display='none'; if(currentView==='archived') els=renderArchived(); else els=renderTrash(); }
     layoutInColumns(els);
     if(cryptoKey){ updateTotps(); maybeShowBanner(); }
+    if(window.scrollY!==scrollY) window.scrollTo(0,scrollY);
   }
 
   /* Reparte las tarjetas en columnas (masonry) según el ancho disponible.
