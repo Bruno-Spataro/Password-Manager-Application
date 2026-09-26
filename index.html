@@ -52,7 +52,7 @@
   .brand .logo{width:38px; height:38px; border-radius:11px; background:linear-gradient(135deg,var(--primary),var(--primary-d)); display:grid; place-items:center; color:#fff; box-shadow:0 4px 12px rgba(99,102,241,.4)}
   .brand small{display:block; font-weight:500; font-size:11.5px; color:var(--muted)}
   .search{flex:1 1 260px; min-width:200px; position:relative; display:flex; align-items:center}
-  .search svg{position:absolute; left:13px; color:var(--faint); pointer-events:none}
+  .search > svg{position:absolute; left:13px; color:var(--faint); pointer-events:none}
   .search input{width:100%; padding:11px 14px 11px 40px; border:1px solid var(--border); border-radius:12px; background:var(--surface-2); color:var(--text); font-size:14.5px; outline:none; transition:.15s}
   .search input:focus{border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-soft)}
   .search .clear{position:absolute; top:50%; right:10px; transform:translateY(-50%); line-height:0; border:none; background:none; cursor:pointer; color:var(--faint); padding:5px; border-radius:7px; display:none}
@@ -168,12 +168,10 @@
   .field-label-row .account-actions{flex-shrink:0}
   .account>*:first-child{margin-top:0}
   .account-sub{font-size:13.5px; font-weight:700; color:var(--primary); flex:1; word-break:break-word}
-  .account-sub.spacer{color:transparent}
   .account-actions{display:flex; gap:1px; flex-shrink:0}
   .account-badges{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px}
   .badge{font-size:11px; font-weight:600; padding:3px 8px; border-radius:20px; display:inline-flex; align-items:center; gap:4px; max-width:100%}
-  .badge.reuse{max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:help}
-  .badge.reuse{background:var(--danger-soft); color:var(--danger)}
+  .badge.reuse{background:var(--danger-soft); color:var(--danger); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:help}
   .badge.old{background:rgba(245,158,11,.12); color:var(--warn)}
   .badge.weak{background:var(--danger-soft); color:var(--danger)}
   .field{margin-top:8px}
@@ -292,7 +290,6 @@
     .header-inner{padding:12px 14px}
     .brand small{display:none}
     .tabs-wrap, main, footer, .banner{padding-left:14px; padding-right:14px}
-    .grid{grid-template-columns:1fr}
     .btn .label-hide{display:none}
     .cf-row{grid-template-columns:1fr 1fr auto}
     .cf-secret{grid-column:1/-1; justify-content:flex-start}
@@ -750,18 +747,29 @@
     }catch(e){ return null; }
   }
   function startTotp(){ stopTotp(); totpInterval=setInterval(updateTotps,1000); updateTotps(); }
-  function stopTotp(){ if(totpInterval){ clearInterval(totpInterval); totpInterval=null; } }
+  function stopTotp(){ if(totpInterval){ clearInterval(totpInterval); totpInterval=null; } totpCodeCache={}; }
+  // El código de 6 dígitos solo cambia una vez cada 30s, pero el contador de
+  // segundos hay que refrescarlo cada segundo. Antes se recalculaba el HMAC
+  // (la parte cara, criptográfica) las 30 veces — acá se guarda en caché por
+  // ventana de 30s y solo se recalcula cuando esa ventana cambió de verdad.
+  let totpCodeCache={}; // accountId -> {period, code}
   async function updateTotps(){
     const els=grid.querySelectorAll('.totp');
+    if(els.length===0) return;
+    const nowSec=Math.floor(Date.now()/1000);
+    const period=Math.floor(nowSec/30);
+    const rem=30-(nowSec%30);
     for(const el of els){
       const cEl=el.closest('[data-card-id]'), aEl=el.closest('[data-account-id]');
       if(!cEl||!aEl) continue;
-      const a=findAccount(cEl.dataset.cardId,aEl.dataset.accountId);
+      const accId=aEl.dataset.accountId;
+      const a=findAccount(cEl.dataset.cardId,accId);
       if(!a||!a.totp) continue;
-      const code=await totpCode(a.totp);
+      let cached=totpCodeCache[accId];
+      if(!cached||cached.period!==period){ cached={period, code:await totpCode(a.totp)}; totpCodeCache[accId]=cached; }
       const dig=el.querySelector('.totp-digits'), sec=el.querySelector('.totp-secs');
-      if(dig) dig.textContent=code?(code.slice(0,3)+' '+code.slice(3)):'inválida';
-      if(sec){ const rem=30-(Math.floor(Date.now()/1000)%30); sec.textContent=rem+'s'; }
+      if(dig) dig.textContent=cached.code?(cached.code.slice(0,3)+' '+cached.code.slice(3)):'inválida';
+      if(sec) sec.textContent=rem+'s';
     }
   }
 
@@ -991,7 +999,7 @@
       else c.accounts.filter(a=>a.deleted).forEach(a=>{ if(!searchQuery||acMatch(a,searchQuery)||c.title.toLowerCase().includes(searchQuery)) units.push({type:'acc',card:c,account:a}); });
     });
     if(units.length===0) return [emptyState(searchQuery?ICON.search:ICON.trashBig, searchQuery?'Sin resultados':'La papelera está vacía', searchQuery?'No encontramos nada para "'+escapeHtml(searchQuery)+'".':'Lo que elimines se guarda acá '+TRASH_DAYS+' días por si te arrepentís.')];
-    return units.map(u=> u.type==='card' ? renderCard(u.card,u.card.accounts,'trashCard') : renderStandalone(u.card,u.account,'trash'));
+    return units.map(u=> u.type==='card' ? renderCard(u.card,u.card.accounts,'trashCard') : renderStandalone(u.card,u.account));
   }
 
   function emptyState(icon,title,text){ const el=document.createElement('div'); el.className='empty'; el.innerHTML='<div class="ic">'+icon+'</div><h3>'+title+'</h3><p>'+text+'</p>'; return el; }
@@ -1057,12 +1065,13 @@
     accounts.forEach(a=>ac.appendChild(renderAccount(card,a,multi,set,dragAcc)));
   }
 
-  function renderStandalone(card,account,kind){
+  // Solo la usa la Papelera para una cuenta suelta (borrada individualmente,
+  // con la tarjeta madre todavía activa). Las "archivadas sueltas" ya no pasan
+  // por acá: se agrupan bajo su tarjeta madre vía renderCard(...,'archivedGroup').
+  function renderStandalone(card,account){
     const el=document.createElement('div'); el.className='card'; el.dataset.cardId=card.id;
-    const tag=kind==='trash'?'en papelera':'archivada';
-    el.innerHTML='<div class="card-head"><div class="card-titlecol"><h3 class="card-title"><span class="txt" title="'+escapeHtml(card.title)+'">'+escapeHtml(card.title)+'</span></h3><div class="card-tags"><span class="parent-badge">'+tag+'</span></div></div></div><div class="accounts"></div>';
-    const set=kind==='trash'?['restore','deleteForever']:['edit','unarchive','delete'];
-    el.querySelector('.accounts').appendChild(renderAccount(card,account,!!account.subtitle,set,kind==='archived'));
+    el.innerHTML='<div class="card-head"><div class="card-titlecol"><h3 class="card-title"><span class="txt" title="'+escapeHtml(card.title)+'">'+escapeHtml(card.title)+'</span></h3><div class="card-tags"><span class="parent-badge">en papelera</span></div></div></div><div class="accounts"></div>';
+    el.querySelector('.accounts').appendChild(renderAccount(card,account,!!account.subtitle,['restore','deleteForever'],false));
     return el;
   }
 
