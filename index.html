@@ -295,7 +295,7 @@
     .cf-row{grid-template-columns:1fr 1fr auto}
     .cf-secret{grid-column:1/-1; justify-content:flex-start}
     .banner-inner{flex-wrap:wrap; align-items:flex-start}
-    .banner-inner #bannerExport{order:3; flex:1 1 100%; margin-top:2px}
+    .banner-inner #bannerExport, .banner-inner #updateReload{order:3; flex:1 1 100%; margin-top:2px}
   }
 </style>
 </head>
@@ -339,8 +339,8 @@
 <div id="updateBanner" class="banner" style="display:none">
   <div class="banner-inner">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
-    <span class="grow">¡Se actualizó la app! Ya estás usando la última versión.</span>
-    <button class="btn primary sm" id="updateReload">Entendido</button>
+    <span class="grow">¡Se actualizó la app! Si querés que te avisemos la próxima vez con una notificación del celular, activalas en Ajustes.</span>
+    <button class="btn primary sm" id="updateReload">Activar notificaciones</button>
     <button class="icon-btn sm" id="updateClose" title="Después"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
   </div>
 </div>
@@ -426,11 +426,23 @@
           <div><div class="lbl">Preferencias</div><div class="desc">Bloqueo automático, columnas, notificaciones.</div></div>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
         </button>
+        <button type="button" class="settings-nav-item" data-set="nav" data-nav="importcsv">
+          <div><div class="lbl">Importar contraseñas (CSV)</div><div class="desc">Sumá las que ya tenés guardadas en Chrome u otro navegador.</div></div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
         <button type="button" class="settings-nav-item danger" data-set="nav" data-nav="danger">
           <div><div class="lbl">Zona de peligro</div><div class="desc">Borrar todos los datos.</div></div>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
         </button>
         <div style="text-align:center; font-size:11px; color:var(--faint); margin-top:14px" id="settingsVersion"></div>
+      </div>
+
+      <!-- Panel: importar CSV -->
+      <div id="panel-importcsv" class="settings-panel" style="display:none">
+        <p>Sirve para traer de una las contraseñas que ya tenías guardadas en el navegador (Chrome, por ejemplo).</p>
+        <p><b>Cómo exportarlas de Chrome:</b> Configuración → Contraseñas y autocompletado → Administrador de contraseñas → los tres puntitos (⋮) → Exportar contraseñas.</p>
+        <p>Esto <b>agrega</b> cuentas nuevas, nunca borra ni reemplaza lo que ya tenés cargado acá. Si una cuenta del CSV coincide con una que ya tenés (mismo sitio y usuario), se saltea sola sin tocarla.</p>
+        <button type="button" class="btn primary" data-set="import-csv" style="width:100%; justify-content:center">Elegir archivo CSV</button>
       </div>
 
       <!-- Panel: correo predeterminado -->
@@ -488,6 +500,20 @@
         <button type="button" class="btn danger" data-set="delete-all" style="width:100%; justify-content:center">Eliminar todos mis datos</button>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- Modal: resultado de importar CSV -->
+<div class="overlay" id="importReportOverlay">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <h2>Resultado de la importación</h2>
+      <button class="icon-btn" data-set="close-report" title="Cerrar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body" id="importReportBody"></div>
+    <div class="modal-foot">
+      <button class="btn primary" data-set="close-report">Listo</button>
     </div>
   </div>
 </div>
@@ -583,7 +609,7 @@
   // GitHub (no cada vez que se edita el archivo). Se muestra chiquito en el
   // pie de página y al final de Ajustes para ver de un vistazo si ya llegó
   // la última versión. También sirve para el aviso de "se actualizó la app".
-  const APP_VERSION='v2.33';
+  const APP_VERSION='v2.34';
   const KEY_APP_VERSION='mis_contrasenas_version_vista';
   const KEY_VAULT='mis_contrasenas_vault';
   const KEY_OLD='mis_contrasenas_v1';
@@ -1596,6 +1622,117 @@
     r.readAsText(file);
   }
 
+  /* ---------- importar CSV (Chrome / otro navegador) ---------- */
+  const csvInput=document.createElement('input'); csvInput.type='file'; csvInput.accept='.csv,text/csv'; csvInput.style.display='none'; document.body.appendChild(csvInput);
+  csvInput.addEventListener('change',()=>{ const f=csvInput.files[0]; if(f) importCsvFile(f); csvInput.value=''; });
+
+  // Parser de CSV a mano (sin librerías): entiende comillas y comas adentro
+  // de un campo entre comillas, que es como Chrome exporta los campos que
+  // tienen comas (ej. una nota con texto largo).
+  function parseCSV(text){
+    const rows=[]; let row=[]; let field=''; let inQuotes=false;
+    for(let i=0;i<text.length;i++){
+      const c=text[i];
+      if(inQuotes){
+        if(c==='"'){ if(text[i+1]==='"'){ field+='"'; i++; } else inQuotes=false; }
+        else field+=c;
+      } else {
+        if(c==='"') inQuotes=true;
+        else if(c===','){ row.push(field); field=''; }
+        else if(c==='\r'){ /* nada, lo maneja el \n */ }
+        else if(c==='\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+        else field+=c;
+      }
+    }
+    if(field!==''||row.length){ row.push(field); rows.push(row); }
+    return rows.filter(r=>r.some(x=>x.trim()!==''));
+  }
+
+  // Distintos exportadores le ponen distinto nombre a las mismas columnas
+  // (Chrome, Firefox, Google Passwords, etc.) — reconocemos las variantes
+  // más comunes en inglés y español.
+  function mapCsvHeader(headerRow){
+    const idx={};
+    headerRow.forEach((h,i)=>{
+      const k=h.trim().toLowerCase();
+      if(['name','title','sitio','nombre'].includes(k)) idx.title=i;
+      else if(['url','sitio web','website','login_uri'].includes(k)) idx.url=i;
+      else if(['username','user','usuario','login','correo','email','login_username'].includes(k)) idx.user=i;
+      else if(['password','contraseña','pass','login_password'].includes(k)) idx.password=i;
+      else if(['note','notes','nota','notas'].includes(k)) idx.extra=i;
+    });
+    return idx;
+  }
+
+  function normalizeHost(u){
+    if(!u) return '';
+    try{
+      let s=u.trim().toLowerCase();
+      if(!s) return '';
+      if(!/^https?:\/\//.test(s)) s='https://'+s;
+      return new URL(s).hostname.replace(/^www\./,'');
+    }catch(_){ return u.trim().toLowerCase(); }
+  }
+
+  // Una cuenta del CSV se considera "ya la tenés" si coincide el sitio
+  // (por dominio, o por título si ninguna de las dos tiene url cargada) Y
+  // el usuario — así una misma persona con dos cuentas distintas en el
+  // mismo sitio no se pisan entre sí.
+  function findDuplicateAccount(row){
+    const rowHost=normalizeHost(row.url);
+    const rowUser=(row.user||'').trim().toLowerCase();
+    for(const c of data.cards){
+      if(c.deleted) continue;
+      const cardHost=normalizeHost(c.url);
+      const sameSite = rowHost && cardHost ? rowHost===cardHost : c.title.trim().toLowerCase()===row.title.trim().toLowerCase();
+      if(!sameSite) continue;
+      if(c.accounts.some(a=>!a.deleted && (a.user||'').trim().toLowerCase()===rowUser)) return true;
+    }
+    return false;
+  }
+
+  function importCsvFile(file){
+    const r=new FileReader();
+    r.onload=()=>{
+      let rows; try{ rows=parseCSV(String(r.result)); }catch(e){ alert('No se pudo leer el archivo.'); return; }
+      if(rows.length<2){ alert('El archivo CSV está vacío o no tiene el formato esperado.'); return; }
+      const idx=mapCsvHeader(rows[0]);
+      if(idx.user===undefined && idx.password===undefined){ alert('No reconocí las columnas de usuario/contraseña en este CSV.\n\nProbá exportarlo de nuevo desde Chrome: Contraseñas → los tres puntitos (⋮) → Exportar contraseñas.'); return; }
+      const added=[], skipped=[];
+      for(let i=1;i<rows.length;i++){
+        const cols=rows[i];
+        const title=(idx.title!==undefined?(cols[idx.title]||''):'').trim();
+        const url=(idx.url!==undefined?(cols[idx.url]||''):'').trim();
+        const user=(idx.user!==undefined?(cols[idx.user]||''):'').trim();
+        const password=(idx.password!==undefined?(cols[idx.password]||''):'');
+        const extra=(idx.extra!==undefined?(cols[idx.extra]||''):'').trim();
+        if(!user && !password) continue; // fila vacía o basura
+        const row={title: title||normalizeHost(url)||'Sin título', url, user, password, extra};
+        if(findDuplicateAccount(row)){ skipped.push(row); continue; }
+        data.cards.unshift({id:uid(), title:row.title, url:row.url, category:'', favorite:false, collapsed:false, archived:false, deleted:false, deletedAt:null, createdAt:Date.now(),
+          accounts:[{id:uid(), subtitle:'', user:row.user, password:row.password, extra:row.extra, totp:'', fields:[], passwordUpdatedAt:Date.now(), archived:false, deleted:false, deletedAt:null}]});
+        added.push(row);
+      }
+      if(added.length) save();
+      render();
+      showImportReport(added,skipped);
+    };
+    r.readAsText(file);
+  }
+
+  function showImportReport(added,skipped){
+    const item=r=>'<div class="settings-row"><div><div class="lbl">'+escapeHtml(r.title)+'</div><div class="desc">'+escapeHtml(r.user||'(sin usuario)')+'</div></div></div>';
+    const section=(label,list,emptyMsg)=>'<h3 style="margin:18px 0 4px">'+label+' ('+list.length+')</h3>'+(list.length?list.map(item).join(''):'<p style="color:var(--muted); font-size:13px">'+emptyMsg+'</p>');
+    $('importReportBody').innerHTML=
+      section('✅ Agregadas',added,'No se agregó ninguna cuenta nueva.')+
+      section('⏭️ Ya las tenías (salteadas)',skipped,'Ninguna coincidía con lo que ya tenías.');
+    $('importReportOverlay').classList.add('open');
+  }
+  const importReportOverlay=$('importReportOverlay');
+  importReportOverlay.addEventListener('click',e=>{
+    if(e.target===importReportOverlay || e.target.closest('[data-set="close-report"]')) importReportOverlay.classList.remove('open');
+  });
+
   /* ---------- recordatorio de respaldo ---------- */
   function maybeShowBanner(){
     const el=$('backupBanner');
@@ -1646,7 +1783,7 @@
   }
   function closeSettings(){ settingsOverlay.classList.remove('open'); }
   // Título de cada panel — se muestra arriba cuando estás adentro de esa pantalla.
-  const SETTINGS_TITLES={email:'Correo / usuario predeterminado', masterpw:'Cambiar clave maestra', prefs:'Preferencias', danger:'Zona de peligro'};
+  const SETTINGS_TITLES={email:'Correo / usuario predeterminado', masterpw:'Cambiar clave maestra', prefs:'Preferencias', importcsv:'Importar contraseñas (CSV)', danger:'Zona de peligro'};
   function showSettingsMenu(){
     $('settingsMenu').style.display='';
     settingsOverlay.querySelectorAll('.settings-panel').forEach(p=>p.style.display='none');
@@ -1695,6 +1832,7 @@
     else if(a==='save-email') saveDefaultEmail();
     else if(a==='toggle') togglePassInput(b.closest('.pass-input').querySelector('input'),b);
     else if(a==='delete-all'){ if(factoryReset()) closeSettings(); }
+    else if(a==='import-csv') csvInput.click();
     else if(b.dataset.nav) showSettingsPanel(b.dataset.nav);
   });
   // Las preferencias (switches + minutos) se guardan al toque, sin botón "Guardar" —
@@ -1935,7 +2073,10 @@
     });
   }
   const uReload=$('updateReload'), uClose=$('updateClose');
-  if(uReload) uReload.addEventListener('click',()=>{ const b=$('updateBanner'); if(b) b.style.display='none'; });
+  if(uReload) uReload.addEventListener('click',()=>{
+    $('updateBanner').style.display='none';
+    openSettings(); showSettingsPanel('prefs');
+  });
   if(uClose) uClose.addEventListener('click',()=>{ const b=$('updateBanner'); if(b) b.style.display='none'; });
   // Aviso de "se actualizó la app": compara un número de versión fijo contra
   // el último que vio este navegador (guardado en localStorage). Como el
@@ -1947,14 +2088,19 @@
   try{
     const last=localStorage.getItem(KEY_APP_VERSION);
     if(last && last!==APP_VERSION){
-      const b=$('updateBanner'); if(b) b.style.display='block';
-      if(notifyUpdatesOn && typeof Notification!=='undefined' && Notification.permission==='granted'){
+      // Si ya tenés la notificación del sistema activada, mostramos SOLO esa —
+      // el cartel de adentro de la app es nada más que un respaldo para quien
+      // no la tiene prendida, no hace falta mostrar las dos cosas iguales.
+      const notifGranted=notifyUpdatesOn && typeof Notification!=='undefined' && Notification.permission==='granted';
+      if(notifGranted){
         const body='Ya está lista la última versión de Mis Contraseñas.';
         if('serviceWorker' in navigator){
           navigator.serviceWorker.ready.then(reg=>reg.showNotification('Nueva actualización 🔒',{body,icon:'icon-192.png',badge:'icon-192.png'})).catch(()=>{ try{new Notification('Nueva actualización 🔒',{body,icon:'icon-192.png'});}catch(_){} });
         } else {
           try{ new Notification('Nueva actualización 🔒',{body,icon:'icon-192.png'}); }catch(_){}
         }
+      } else {
+        const b=$('updateBanner'); if(b) b.style.display='block';
       }
     }
     localStorage.setItem(KEY_APP_VERSION, APP_VERSION);
