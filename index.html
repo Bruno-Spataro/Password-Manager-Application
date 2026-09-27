@@ -95,7 +95,7 @@
      están pensados para que entre en un notebook de 15.6" común — que con
      el escalado de Windows al 125% (lo normal en Windows, no el 100% "real")
      el navegador ve como si tuviera ~1530px de ancho, no los 1920px físicos. */
-  .side-sort{max-width:1180px; margin:0 auto 14px; padding:0 20px; display:flex; flex-wrap:wrap; align-items:center; gap:8px}
+  .side-sort{max-width:1180px; margin:14px auto; padding:0 20px; display:flex; flex-wrap:wrap; align-items:center; gap:8px}
   .side-sort-label{font-size:12px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:.5px; margin-right:2px; flex-shrink:0}
   .sort-opt{cursor:pointer; border:1px solid var(--border); background:var(--surface); color:var(--muted); font-family:inherit; font-size:12.5px; font-weight:600; padding:7px 12px; border-radius:20px; transition:.15s}
   .sort-opt:hover{color:var(--text); border-color:var(--primary)}
@@ -175,6 +175,7 @@
   .badge.reuse{background:var(--danger-soft); color:var(--danger); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:help}
   .badge.old{background:rgba(245,158,11,.12); color:var(--warn)}
   .badge.weak{background:var(--danger-soft); color:var(--danger)}
+  .badge.pwned{background:var(--danger-soft); color:var(--danger)}
   .field{margin-top:8px}
   .field-label{font-size:11px; font-weight:600; color:var(--faint); text-transform:uppercase; letter-spacing:.5px}
   .value-row{display:flex; align-items:center; gap:6px; margin-top:2px}
@@ -464,11 +465,15 @@
           <input id="setAutoLockMin" type="number" min="1" max="180" step="1">
         </div>
         <div class="settings-row">
+          <div><div class="lbl">Bloquear al salir de la app</div><div class="desc">La bloquea sola si cambiás a otra app o apagás la pantalla. Espera unos segundos por si volvés enseguida (ej. para pegar una contraseña copiada).</div></div>
+          <label class="switch"><input type="checkbox" id="setLockOnBg"><span class="switch-track"><span class="switch-thumb"></span></span></label>
+        </div>
+        <div class="settings-row">
           <div><div class="lbl">Reorganización automática</div><div class="desc">Al plegar o desplegar una tarjeta, reacomoda las columnas para no dejar huecos. Si al desplegar varias juntas te resulta molesto, desactivalo.</div></div>
           <label class="switch"><input type="checkbox" id="setAutoReorg"><span class="switch-track"><span class="switch-thumb"></span></span></label>
         </div>
         <div class="settings-row">
-          <div><div class="lbl">Panel de salud de contraseñas</div><div class="desc">Muestra arriba de tus contraseñas activas un resumen de cuántas están reutilizadas, viejas o son débiles.</div></div>
+          <div><div class="lbl">Panel de salud de contraseñas</div><div class="desc">Muestra arriba de tus contraseñas activas un resumen de cuántas están reutilizadas, viejas, son débiles o aparecieron filtradas (esto último solo si lo pedís, ya que necesita internet).</div></div>
           <label class="switch"><input type="checkbox" id="setHealthPanel"><span class="switch-track"><span class="switch-thumb"></span></span></label>
         </div>
         <div class="settings-row">
@@ -578,7 +583,7 @@
   // GitHub (no cada vez que se edita el archivo). Se muestra chiquito en el
   // pie de página y al final de Ajustes para ver de un vistazo si ya llegó
   // la última versión. También sirve para el aviso de "se actualizó la app".
-  const APP_VERSION='v2.32';
+  const APP_VERSION='v2.33';
   const KEY_APP_VERSION='mis_contrasenas_version_vista';
   const KEY_VAULT='mis_contrasenas_vault';
   const KEY_OLD='mis_contrasenas_v1';
@@ -590,6 +595,7 @@
   const KEY_AUTOREORG='mis_contrasenas_autoreorg';         // '1'/'0' — reacomodar columnas al plegar/desplegar
   const KEY_HEALTH_PANEL='mis_contrasenas_health_panel';   // '1'/'0' — mostrar el panel de salud de contraseñas
   const KEY_NOTIFY_UPDATES='mis_contrasenas_notify_updates'; // '1'/'0' — notificación del navegador al actualizar
+  const KEY_LOCK_BG='mis_contrasenas_lock_bg';               // '1'/'0' — bloquear al mandar la app a segundo plano
   const KEY_VIEW_MODE='mis_contrasenas_vista';             // 'cards' | 'list'
   const KEY_SORT_MODE='mis_contrasenas_orden';             // manual | az | za | newest | oldest
   const RESET_LIMIT=10;
@@ -605,7 +611,12 @@
   let currentView='active';
   let searchQuery='';
   let categoryFilter='';
-  let issueFilter='';   // '' | 'reuse' | 'old' | 'weak' — filtro al tocar un chip del panel de salud
+  let issueFilter='';   // '' | 'reuse' | 'old' | 'weak' | 'pwned' — filtro al tocar un chip del panel de salud
+  // Resultado del chequeo de "Have I Been Pwned": password (texto plano) -> cantidad
+  // de veces que apareció en brechas conocidas. Vive SOLO en memoria — nunca se
+  // guarda en localStorage ni en el vault — y se borra al bloquear la app.
+  let pwnedByPassword={};
+  let pwnedChecking=false, pwnedChecked=false;
   let sortMode='az'; // manual | az | za | newest | oldest — cómo ordenar las tarjetas activas (por defecto, alfabético)
   let reuseMap={};
   let reuseGroups={};  // password -> [{cardId,accountId,label}] — quién más usa cada contraseña
@@ -620,10 +631,16 @@
   let autoReorgOn=true;
   let healthPanelOn=true;
   let notifyUpdatesOn=false;
+  let lockOnBgOn=true;
   let viewMode='cards'; // 'cards' | 'list'
 
   let cryptoKey=null, vaultSaltB64=null, vaultHint='', vault=null;
-  let inactivityTimer=null, totpInterval=null, clipTimer=null;
+  let inactivityTimer=null, totpInterval=null, clipTimer=null, bgLockTimer=null;
+  // Cuánto tiempo puede estar la app en segundo plano (cambiaste de app, apagaste
+  // la pantalla) antes de bloquearse. No es instantáneo a propósito: si fuera
+  // 0, cada vez que copiás una contraseña y salís a pegarla en otro lado se
+  // bloquearía sola antes de que puedas volver a pegar.
+  const BG_LOCK_GRACE_MS=20000;
 
   const enc=new TextEncoder(), dec=new TextDecoder();
 
@@ -885,18 +902,20 @@
     if(type==='reuse') return reuseMap[a.password]>1;
     if(type==='old') return !!a.passwordUpdatedAt && (Date.now()-a.passwordUpdatedAt>OLD_PASS_DAYS*DAY);
     if(type==='weak') return scorePassword(a.password).label==='Débil';
+    if(type==='pwned') return (pwnedByPassword[a.password]||0)>0;
     return false;
   }
 
   // Cuenta, entre las cuentas ACTIVAS (ni archivadas ni en papelera), cuántas
   // tienen cada tipo de problema. Es la base del panel de salud.
   function computeHealth(activeCards){
-    const s={reuse:0, old:0, weak:0};
+    const s={reuse:0, old:0, weak:0, pwned:0};
     activeCards.forEach(c=>c.accounts.forEach(a=>{
       if(a.archived||a.deleted||!a.password) return;
       if(accountHasIssue(a,'reuse')) s.reuse++;
       if(accountHasIssue(a,'old')) s.old++;
       if(accountHasIssue(a,'weak')) s.weak++;
+      if(pwnedChecked && accountHasIssue(a,'pwned')) s.pwned++;
     }));
     return s;
   }
@@ -908,11 +927,66 @@
     const chip=(type,icon,singular,plural,n)=>
       '<button type="button" class="health-stat'+(issueFilter===type?' active':'')+'" data-issue="'+type+'"'+(n===0?' disabled':'')+'>'
       +icon+' <span class="n">'+n+'</span> '+(n===1?singular:plural)+'</button>';
+    // El chequeo de filtraciones (Have I Been Pwned) es el único que necesita
+    // internet, así que a diferencia de los otros 3 (instantáneos y locales)
+    // no se dispara solo — hay que tocar el botón para pedirlo.
+    let pwnedHtml;
+    if(pwnedChecking){
+      pwnedHtml='<span class="health-stat" style="cursor:default; opacity:.7">⏳ Revisando filtraciones…</span>';
+    } else if(pwnedChecked){
+      pwnedHtml=chip('pwned','🕵️','filtrada','filtradas',s.pwned);
+    } else {
+      pwnedHtml='<button type="button" class="health-stat" id="checkPwnedBtn" title="Consulta de forma anónima (k-anonimato) si alguna contraseña activa apareció en una filtración conocida. Nunca se manda la contraseña, solo un pedacito de su hash.">🕵️ Revisar filtraciones</button>';
+    }
     el.innerHTML=
       chip('reuse','⚠️','reutilizada','reutilizadas',s.reuse)+
       chip('old','⏰','vieja','viejas',s.old)+
-      chip('weak','🔴','débil','débiles',s.weak);
+      chip('weak','🔴','débil','débiles',s.weak)+
+      pwnedHtml;
     el.style.display='flex';
+  }
+
+  async function sha1Hex(str){
+    const buf=await crypto.subtle.digest('SHA-1', new TextEncoder().encode(str));
+    return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('').toUpperCase();
+  }
+  // Chequea contraseñas filtradas contra Have I Been Pwned con k-anonimato:
+  // se manda el hash SHA-1 de la contraseña, y de ese hash (40 caracteres)
+  // solo los primeros 5. El servidor devuelve todos los sufijos que
+  // coinciden con ese prefijo (miles), y la comparación final para ver si
+  // la nuestra está en la lista se hace acá — la contraseña real nunca sale
+  // del celular. Ver https://haveibeenpwned.com/API/v3#PwnedPasswords
+  async function runPwnedCheck(){
+    if(pwnedChecking) return;
+    const activeCards=data.cards.filter(c=>!c.deleted&&!c.archived);
+    const passwords=new Set();
+    activeCards.forEach(c=>c.accounts.forEach(a=>{ if(!a.archived&&!a.deleted&&a.password) passwords.add(a.password); }));
+    const list=[...passwords].filter(pw=>!(pw in pwnedByPassword));
+    if(list.length===0){ pwnedChecked=true; render(); return; }
+    pwnedChecking=true; render();
+    try{
+      for(let i=0;i<list.length;i++){
+        const pw=list[i];
+        let count=0;
+        try{
+          const hash=await sha1Hex(pw);
+          const prefix=hash.slice(0,5), suffix=hash.slice(5);
+          const res=await fetch('https://api.pwnedpasswords.com/range/'+prefix);
+          if(res.ok){
+            const text=await res.text();
+            const line=text.split('\n').find(l=>l.split(':')[0].trim()===suffix);
+            if(line) count=parseInt(line.split(':')[1],10)||0;
+          }
+        }catch(_){ /* sin internet o falló la consulta: la dejamos en 0 por ahora, se puede reintentar después */ }
+        pwnedByPassword[pw]=count;
+        // esperamos un toque entre pedido y pedido para no bombardear la API de una
+        if(i<list.length-1) await new Promise(r=>setTimeout(r,300));
+      }
+      pwnedChecked=true;
+      toast('Chequeo de filtraciones terminado');
+    } finally {
+      pwnedChecking=false; render();
+    }
   }
 
   function render(){
@@ -1152,6 +1226,10 @@
     }
     if(accountHasIssue(a,'old')) badges+='<span class="badge old">⏰ Contraseña vieja</span>';
     if(accountHasIssue(a,'weak')) badges+='<span class="badge weak">🔴 Contraseña débil</span>';
+    if(accountHasIssue(a,'pwned')){
+      const n=pwnedByPassword[a.password]||0;
+      badges+='<span class="badge pwned">🕵️ Filtrada'+(n>1?' ('+n.toLocaleString('es-AR')+' veces)':'')+'</span>';
+    }
     const badgeRow=badges?'<div class="account-badges">'+badges+'</div>':'';
     // user
     const uVal=a.user?escapeHtml(a.user):'<span class="muted">—</span>';
@@ -1300,6 +1378,7 @@
   // Tocar un chip del panel de salud filtra la lista a esas cuentas; tocarlo
   // de nuevo (ya activo) quita el filtro — como un interruptor, no como una pestaña.
   $('healthPanel').addEventListener('click',e=>{
+    if(e.target.closest('#checkPwnedBtn')){ runPwnedCheck(); return; }
     const b=e.target.closest('[data-issue]'); if(!b||b.disabled) return;
     issueFilter = (issueFilter===b.dataset.issue) ? '' : b.dataset.issue;
     render();
@@ -1554,6 +1633,7 @@
     $('setAutoLockOn').checked=autoLockOn;
     $('setAutoLockMin').value=autoLockMin;
     updateAutoLockMinRowVisibility();
+    $('setLockOnBg').checked=lockOnBgOn;
     $('setAutoReorg').checked=autoReorgOn;
     $('setHealthPanel').checked=healthPanelOn;
     // Si el usuario le sacó el permiso de notificaciones desde el navegador
@@ -1633,6 +1713,10 @@
       try{ localStorage.setItem(KEY_AUTOLOCK_MIN,String(v)); }catch(_){}
       resetInactivity();
       toast('Bloqueo automático: '+v+' min');
+    } else if(t.id==='setLockOnBg'){
+      lockOnBgOn=t.checked;
+      try{ localStorage.setItem(KEY_LOCK_BG, lockOnBgOn?'1':'0'); }catch(_){}
+      toast(lockOnBgOn?'Bloqueo al salir activado':'Bloqueo al salir desactivado');
     } else if(t.id==='setAutoReorg'){
       autoReorgOn=t.checked;
       try{ localStorage.setItem(KEY_AUTOREORG, autoReorgOn?'1':'0'); }catch(_){}
@@ -1738,7 +1822,7 @@
     stopTotp(); clearTimeout(inactivityTimer); showSetup();
     return true;
   }
-  function lockNow(){ cryptoKey=null; data={version:2,cards:[]}; inlineEditIds.clear(); newAccountIds.clear(); stopTotp(); clearTimeout(inactivityTimer); showLock(); }
+  function lockNow(){ cryptoKey=null; data={version:2,cards:[]}; inlineEditIds.clear(); newAccountIds.clear(); pwnedByPassword={}; pwnedChecked=false; stopTotp(); clearTimeout(inactivityTimer); clearTimeout(bgLockTimer); showLock(); }
 
   gate.addEventListener('click',e=>{
     const b=e.target.closest('[data-gate]'); if(!b)return;
@@ -1759,6 +1843,21 @@
     inactivityTimer=setTimeout(()=>{ if(cryptoKey) lockNow(); }, ms);
   }
   ['click','keydown','mousemove','touchstart','scroll'].forEach(ev=>document.addEventListener(ev,resetInactivity,{passive:true}));
+
+  /* ---------- bloqueo al mandar la app a segundo plano ---------- */
+  // "visibilitychange" avisa cuando cambiás de app/pestaña o apagás la
+  // pantalla (se pone document.hidden=true) y cuando volvés (=false). No
+  // bloqueamos al toque: esperamos BG_LOCK_GRACE_MS por si volvés enseguida
+  // (por ejemplo, copiaste una contraseña y fuiste a pegarla a otro lado).
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden){
+      if(!cryptoKey||!lockOnBgOn) return;
+      clearTimeout(bgLockTimer);
+      bgLockTimer=setTimeout(()=>{ if(cryptoKey) lockNow(); }, BG_LOCK_GRACE_MS);
+    } else {
+      clearTimeout(bgLockTimer);
+    }
+  });
 
   /* ---------- encabezado ---------- */
   const searchEl=$('search'), clearEl=$('clearSearch');
@@ -1799,6 +1898,7 @@
       if(Number.isFinite(m)&&m>=1&&m<=180) autoLockMin=m;
     }catch(e){}
     try{ autoReorgOn = localStorage.getItem(KEY_AUTOREORG)!=='0'; }catch(e){}
+    try{ lockOnBgOn = localStorage.getItem(KEY_LOCK_BG)!=='0'; }catch(e){}
     try{ healthPanelOn = localStorage.getItem(KEY_HEALTH_PANEL)!=='0'; }catch(e){}
     try{ notifyUpdatesOn = localStorage.getItem(KEY_NOTIFY_UPDATES)==='1'; }catch(e){}
     try{ viewMode = localStorage.getItem(KEY_VIEW_MODE)==='list'?'list':'cards'; }catch(e){}
