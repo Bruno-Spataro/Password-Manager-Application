@@ -609,7 +609,7 @@
   // GitHub (no cada vez que se edita el archivo). Se muestra chiquito en el
   // pie de página y al final de Ajustes para ver de un vistazo si ya llegó
   // la última versión. También sirve para el aviso de "se actualizó la app".
-  const APP_VERSION='v2.34';
+  const APP_VERSION='v2.35';
   const KEY_APP_VERSION='mis_contrasenas_version_vista';
   const KEY_VAULT='mis_contrasenas_vault';
   const KEY_OLD='mis_contrasenas_v1';
@@ -1677,8 +1677,9 @@
   // Una cuenta del CSV se considera "ya la tenés" si coincide el sitio
   // (por dominio, o por título si ninguna de las dos tiene url cargada) Y
   // el usuario — así una misma persona con dos cuentas distintas en el
-  // mismo sitio no se pisan entre sí.
-  function findDuplicateAccount(row){
+  // mismo sitio no se pisan entre sí. Devuelve la cuenta encontrada (para
+  // poder comparar la contraseña) o null si no hay coincidencia.
+  function findMatchingAccount(row){
     const rowHost=normalizeHost(row.url);
     const rowUser=(row.user||'').trim().toLowerCase();
     for(const c of data.cards){
@@ -1686,9 +1687,10 @@
       const cardHost=normalizeHost(c.url);
       const sameSite = rowHost && cardHost ? rowHost===cardHost : c.title.trim().toLowerCase()===row.title.trim().toLowerCase();
       if(!sameSite) continue;
-      if(c.accounts.some(a=>!a.deleted && (a.user||'').trim().toLowerCase()===rowUser)) return true;
+      const a=c.accounts.find(a=>!a.deleted && (a.user||'').trim().toLowerCase()===rowUser);
+      if(a) return {cardId:c.id, accountId:a.id, password:a.password};
     }
-    return false;
+    return null;
   }
 
   function importCsvFile(file){
@@ -1698,7 +1700,7 @@
       if(rows.length<2){ alert('El archivo CSV está vacío o no tiene el formato esperado.'); return; }
       const idx=mapCsvHeader(rows[0]);
       if(idx.user===undefined && idx.password===undefined){ alert('No reconocí las columnas de usuario/contraseña en este CSV.\n\nProbá exportarlo de nuevo desde Chrome: Contraseñas → los tres puntitos (⋮) → Exportar contraseñas.'); return; }
-      const added=[], skipped=[];
+      const added=[], skipped=[], conflicts=[];
       for(let i=1;i<rows.length;i++){
         const cols=rows[i];
         const title=(idx.title!==undefined?(cols[idx.title]||''):'').trim();
@@ -1708,29 +1710,62 @@
         const extra=(idx.extra!==undefined?(cols[idx.extra]||''):'').trim();
         if(!user && !password) continue; // fila vacía o basura
         const row={title: title||normalizeHost(url)||'Sin título', url, user, password, extra};
-        if(findDuplicateAccount(row)){ skipped.push(row); continue; }
+        const match=findMatchingAccount(row);
+        if(match){
+          if(match.password===row.password) skipped.push(row);
+          else conflicts.push({title:row.title, user:row.user, cardId:match.cardId, accountId:match.accountId, importedPassword:row.password});
+          continue;
+        }
         data.cards.unshift({id:uid(), title:row.title, url:row.url, category:'', favorite:false, collapsed:false, archived:false, deleted:false, deletedAt:null, createdAt:Date.now(),
           accounts:[{id:uid(), subtitle:'', user:row.user, password:row.password, extra:row.extra, totp:'', fields:[], passwordUpdatedAt:Date.now(), archived:false, deleted:false, deletedAt:null}]});
         added.push(row);
       }
       if(added.length) save();
       render();
-      showImportReport(added,skipped);
+      showImportReport(added,skipped,conflicts);
     };
     r.readAsText(file);
   }
 
-  function showImportReport(added,skipped){
+  // Cuentas del import que coinciden en sitio+usuario pero difieren en la
+  // contraseña — hasta que Bruno elige "la mía" o "la importada" en el
+  // modal, no se toca nada.
+  let pendingConflicts=[];
+  function showImportReport(added,skipped,conflicts){
+    pendingConflicts=conflicts||[];
     const item=r=>'<div class="settings-row"><div><div class="lbl">'+escapeHtml(r.title)+'</div><div class="desc">'+escapeHtml(r.user||'(sin usuario)')+'</div></div></div>';
     const section=(label,list,emptyMsg)=>'<h3 style="margin:18px 0 4px">'+label+' ('+list.length+')</h3>'+(list.length?list.map(item).join(''):'<p style="color:var(--muted); font-size:13px">'+emptyMsg+'</p>');
+    const conflictItem=(c,i)=>
+      '<div class="settings-row" data-conflict="'+i+'" style="flex-wrap:wrap; align-items:flex-start">'
+      +'<div><div class="lbl">'+escapeHtml(c.title)+'</div><div class="desc">'+escapeHtml(c.user||'(sin usuario)')+' — tiene una contraseña distinta a la del CSV</div></div>'
+      +'<div style="display:flex; gap:8px; flex:1 1 100%; margin-top:8px">'
+        +'<button type="button" class="btn ghost sm" data-conflict-action="keep-mine" data-idx="'+i+'" style="flex:1">Mantener la mía</button>'
+        +'<button type="button" class="btn primary sm" data-conflict-action="use-imported" data-idx="'+i+'" style="flex:1">Usar la importada</button>'
+      +'</div></div>';
+    const conflictSection=conflicts.length
+      ? '<h3 style="margin:18px 0 4px">⚠️ Con contraseña distinta ('+conflicts.length+')</h3>'+conflicts.map(conflictItem).join('')
+      : '';
+    const total=added.length+skipped.length+conflicts.length;
+    const plural=(n,s,p)=>n===1?s:p;
+    const summary='<p>En tu archivo CSV había'+plural(total,'','n')+' <b>'+total+' '+plural(total,'contraseña','contraseñas')+'</b>: se agregaron <b>'+added.length+'</b>, <b>'+skipped.length+'</b> ya la'+plural(skipped.length,'','s')+' tenías'+(conflicts.length?', y en <b>'+conflicts.length+'</b> tenés conflicto de contraseña.':'.')+'</p>';
     $('importReportBody').innerHTML=
+      summary+
       section('✅ Agregadas',added,'No se agregó ninguna cuenta nueva.')+
-      section('⏭️ Ya las tenías (salteadas)',skipped,'Ninguna coincidía con lo que ya tenías.');
+      conflictSection+
+      section('⏭️ Ya las tenías, idénticas',skipped,'Ninguna coincidía con lo que ya tenías.');
     $('importReportOverlay').classList.add('open');
   }
   const importReportOverlay=$('importReportOverlay');
   importReportOverlay.addEventListener('click',e=>{
-    if(e.target===importReportOverlay || e.target.closest('[data-set="close-report"]')) importReportOverlay.classList.remove('open');
+    if(e.target===importReportOverlay || e.target.closest('[data-set="close-report"]')){ importReportOverlay.classList.remove('open'); return; }
+    const b=e.target.closest('[data-conflict-action]'); if(!b) return;
+    const c=pendingConflicts[parseInt(b.dataset.idx,10)]; if(!c) return;
+    if(b.dataset.conflictAction==='use-imported'){
+      const a=findAccount(c.cardId,c.accountId);
+      if(a){ a.password=c.importedPassword; a.passwordUpdatedAt=Date.now(); save(); render(); }
+    }
+    const row=b.closest('[data-conflict]');
+    row.innerHTML='<div><div class="lbl">'+escapeHtml(c.title)+'</div><div class="desc">✓ '+(b.dataset.conflictAction==='use-imported'?'Actualizada con la del CSV':'Se dejó la que ya tenías')+'</div></div>';
   });
 
   /* ---------- recordatorio de respaldo ---------- */
