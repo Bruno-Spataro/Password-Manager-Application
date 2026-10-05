@@ -492,6 +492,14 @@
           <div><div class="lbl">Avisar cuando se actualiza la app</div><div class="desc">Te manda una notificación del celular/navegador cuando se instala una versión nueva. La primera vez te va a pedir permiso.</div></div>
           <label class="switch"><input type="checkbox" id="setNotifyUpdates"><span class="switch-track"><span class="switch-thumb"></span></span></label>
         </div>
+        <div class="settings-row" id="bioRow" style="display:none">
+          <div><div class="lbl">Desbloqueo rápido con huella / Face ID</div><div class="desc">Para no tener que escribir la clave maestra cada vez. Queda guardada cifrada y protegida por el sensor de este equipo; no reemplaza tu clave maestra.</div></div>
+          <label class="switch"><input type="checkbox" id="setBioUnlock"><span class="switch-track"><span class="switch-thumb"></span></span></label>
+        </div>
+        <div id="bioConfirmRow" style="display:none; padding:0 0 12px">
+          <label class="f">Confirmá tu clave maestra para activarlo<div class="pass-input"><input id="setBioPw" type="password" autocomplete="current-password" placeholder="Tu clave maestra"><button type="button" class="btn primary sm" data-set="bio-confirm" style="flex-shrink:0">Confirmar</button></div></label>
+          <div id="bioError" class="gate-error" style="text-align:left"></div>
+        </div>
       </div>
 
       <!-- Panel: zona de peligro -->
@@ -609,7 +617,7 @@
   // GitHub (no cada vez que se edita el archivo). Se muestra chiquito en el
   // pie de página y al final de Ajustes para ver de un vistazo si ya llegó
   // la última versión. También sirve para el aviso de "se actualizó la app".
-  const APP_VERSION='v2.35';
+  const APP_VERSION='v2.37';
   const KEY_APP_VERSION='mis_contrasenas_version_vista';
   const KEY_VAULT='mis_contrasenas_vault';
   const KEY_OLD='mis_contrasenas_v1';
@@ -622,6 +630,7 @@
   const KEY_HEALTH_PANEL='mis_contrasenas_health_panel';   // '1'/'0' — mostrar el panel de salud de contraseñas
   const KEY_NOTIFY_UPDATES='mis_contrasenas_notify_updates'; // '1'/'0' — notificación del navegador al actualizar
   const KEY_LOCK_BG='mis_contrasenas_lock_bg';               // '1'/'0' — bloquear al mandar la app a segundo plano
+  const KEY_BIO='mis_contrasenas_bio';                       // clave maestra envuelta con huella/Face ID (o ausente si está desactivado)
   const KEY_VIEW_MODE='mis_contrasenas_vista';             // 'cards' | 'list'
   const KEY_SORT_MODE='mis_contrasenas_orden';             // manual | az | za | newest | oldest
   const RESET_LIMIT=10;
@@ -801,6 +810,61 @@
   async function decryptData(key,ivB64,ctB64){
     const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64ToBuf(ivB64)},key,b64ToBuf(ctB64));
     return JSON.parse(dec.decode(pt));
+  }
+
+  /* ---------- desbloqueo con huella / Face ID ----------
+     No reemplaza la clave maestra: la guarda cifrada en este dispositivo,
+     con una llave que solo el sensor biométrico del celu/compu puede
+     destrabar (extensión PRF de WebAuthn — la clave nunca sale del hardware
+     de seguridad del equipo). Al tocar "usar huella", el navegador pide el
+     dedo/cara, eso destraba la clave maestra guardada acá, y con ella se
+     desbloquea la app exactamente igual que si la hubieras tecleado. */
+  function bioSupported(){ return !!(window.PublicKeyCredential && navigator.credentials && navigator.credentials.create); }
+  function bioEnabled(){ try{ return !!localStorage.getItem(KEY_BIO); }catch(e){ return false; } }
+  function bioDisable(){ try{ localStorage.removeItem(KEY_BIO); }catch(e){} }
+  async function bioEnroll(pw){
+    if(!bioSupported()) throw new Error('unsupported');
+    const bioSalt=crypto.getRandomValues(new Uint8Array(32));
+    const cred=await navigator.credentials.create({publicKey:{
+      challenge:crypto.getRandomValues(new Uint8Array(32)),
+      rp:{name:'Mis Contraseñas'},
+      user:{id:crypto.getRandomValues(new Uint8Array(16)), name:'Mis Contraseñas', displayName:'Mis Contraseñas'},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:'platform', userVerification:'required', residentKey:'preferred'},
+      extensions:{prf:{}},
+      timeout:60000,
+    }});
+    if(!cred) throw new Error('cancelled');
+    const assertion=await navigator.credentials.get({publicKey:{
+      challenge:crypto.getRandomValues(new Uint8Array(32)),
+      allowCredentials:[{id:cred.rawId, type:'public-key'}],
+      userVerification:'required',
+      extensions:{prf:{eval:{first:bioSalt}}},
+      timeout:60000,
+    }});
+    const ext=assertion.getClientExtensionResults();
+    if(!ext.prf||!ext.prf.results||!ext.prf.results.first) throw new Error('no-prf');
+    const prfBytes=new Uint8Array(ext.prf.results.first).slice(0,32);
+    const key=await crypto.subtle.importKey('raw',prfBytes,'AES-GCM',false,['encrypt']);
+    const iv=crypto.getRandomValues(new Uint8Array(12));
+    const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,enc.encode(pw));
+    localStorage.setItem(KEY_BIO, JSON.stringify({credId:bufToB64(cred.rawId), salt:bufToB64(bioSalt), iv:bufToB64(iv), ct:bufToB64(ct)}));
+  }
+  async function bioReveal(){
+    const bio=JSON.parse(localStorage.getItem(KEY_BIO));
+    const assertion=await navigator.credentials.get({publicKey:{
+      challenge:crypto.getRandomValues(new Uint8Array(32)),
+      allowCredentials:[{id:b64ToBuf(bio.credId), type:'public-key'}],
+      userVerification:'required',
+      extensions:{prf:{eval:{first:b64ToBuf(bio.salt)}}},
+      timeout:60000,
+    }});
+    const ext=assertion.getClientExtensionResults();
+    if(!ext.prf||!ext.prf.results||!ext.prf.results.first) throw new Error('no-prf');
+    const prfBytes=new Uint8Array(ext.prf.results.first).slice(0,32);
+    const key=await crypto.subtle.importKey('raw',prfBytes,'AES-GCM',false,['decrypt']);
+    const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64ToBuf(bio.iv)},key,b64ToBuf(bio.ct));
+    return dec.decode(pt);
   }
 
   /* ---------- TOTP (2FA) ----------
@@ -1811,6 +1875,10 @@
     // Si el usuario le sacó el permiso de notificaciones desde el navegador
     // (no desde acá), reflejarlo apagado aunque la preferencia guardada diga que sí.
     $('setNotifyUpdates').checked = notifyUpdatesOn && (typeof Notification==='undefined' || Notification.permission==='granted');
+    $('bioRow').style.display = bioSupported() ? 'flex' : 'none';
+    $('setBioUnlock').checked = bioEnabled();
+    $('bioConfirmRow').style.display='none';
+    $('setBioPw').value=''; $('bioError').textContent='';
     settingsOverlay.querySelectorAll('[data-set="toggle"]').forEach(b=>b.innerHTML=ICON.eye);
     setSettingsError('');
     showSettingsMenu();
@@ -1847,7 +1915,13 @@
     if(nw!==nw2){ setSettingsError('La nueva clave y su repetición no coinciden.'); return; }
     setSettingsError('');
     const btn=settingsOverlay.querySelector('[data-set="save"]'); btn.disabled=true; btn.textContent='Guardando...';
-    try{ await changeMasterPassword(cur,nw,hint); closeSettings(); toast('Clave maestra actualizada'); }
+    try{
+      const hadBio=bioEnabled();
+      await changeMasterPassword(cur,nw,hint);
+      if(hadBio) bioDisable();
+      closeSettings();
+      toast(hadBio ? 'Clave maestra actualizada. El desbloqueo con huella se desactivó, podés volver a activarlo.' : 'Clave maestra actualizada');
+    }
     catch(e){ if(e.code==='CURRENT_WRONG') setSettingsError('La clave actual es incorrecta.'); else { console.error(e); setSettingsError('No se pudo cambiar la clave.'); } }
     finally{ btn.disabled=false; btn.textContent='Guardar cambios'; }
   }
@@ -1868,6 +1942,7 @@
     else if(a==='toggle') togglePassInput(b.closest('.pass-input').querySelector('input'),b);
     else if(a==='delete-all'){ if(factoryReset()) closeSettings(); }
     else if(a==='import-csv') csvInput.click();
+    else if(a==='bio-confirm') confirmBioEnroll();
     else if(b.dataset.nav) showSettingsPanel(b.dataset.nav);
   });
   // Las preferencias (switches + minutos) se guardan al toque, sin botón "Guardar" —
@@ -1930,8 +2005,36 @@
           }
         });
       }
+    } else if(t.id==='setBioUnlock'){
+      if(!t.checked){
+        bioDisable();
+        toast('Desbloqueo con huella/Face ID desactivado');
+        return;
+      }
+      t.checked=false; // recién queda activado si confirma la clave y el enrolamiento funciona
+      $('bioConfirmRow').style.display='';
+      $('bioError').textContent='';
+      setTimeout(()=>$('setBioPw').focus(),0);
     }
   });
+  async function confirmBioEnroll(){
+    const pw=$('setBioPw').value;
+    if(!pw){ $('bioError').textContent='Ingresá tu clave maestra.'; return; }
+    const btn=settingsOverlay.querySelector('[data-set="bio-confirm"]'); btn.disabled=true; btn.textContent='Verificando...';
+    try{
+      const stored=JSON.parse(localStorage.getItem(KEY_VAULT));
+      const key=await deriveKey(pw,b64ToBuf(stored.salt),stored.iters);
+      await decryptData(key,stored.iv,stored.ct);
+      await bioEnroll(pw);
+      $('setBioUnlock').checked=true; $('bioConfirmRow').style.display='none'; $('setBioPw').value='';
+      toast('Desbloqueo con huella/Face ID activado');
+    }catch(e){
+      console.error(e);
+      if(e&&e.name==='NotAllowedError') $('bioError').textContent='Se canceló o no se reconoció la huella/Face ID.';
+      else if(e&&e.message==='no-prf') $('bioError').textContent='Tu dispositivo o navegador todavía no soporta esto.';
+      else $('bioError').textContent='La clave maestra no es correcta.';
+    } finally { btn.disabled=false; btn.textContent='Confirmar'; }
+  }
   settingsOverlay.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeSettings();return;} if(e.key==='Enter'){ e.preventDefault(); if(e.target&&e.target.id==='setDefaultEmail') saveDefaultEmail(); else if(e.target&&e.target.id!=='setAutoLockMin') saveSettings(); } });
 
   /* ---------- pantalla bloqueo / setup ---------- */
@@ -1942,7 +2045,7 @@
   function gateError(m){ const e=gate.querySelector('#gerror'); if(e)e.textContent=m||''; }
 
   function setupHTML(){ return '<div class="gate-card"><div class="gate-logo">'+ICON.shield+'</div><h1>Creá tu contraseña maestra</h1><p class="gate-sub">Con esta clave se cifra todo. Te la vamos a pedir cada vez que abras la app.</p><div class="gate-field"><label>Contraseña maestra</label><div class="gate-pass"><input id="gpw" class="gate-pw" type="password" placeholder="Elegí una clave" autocomplete="new-password"><button class="icon-btn" data-gate="toggle-pw" type="button">'+ICON.eye+'</button></div></div><div class="gate-field"><label>Repetí la contraseña</label><input id="gpw2" class="gate-pw" type="password" placeholder="La misma de arriba" autocomplete="new-password"></div><div class="gate-field"><label>Pista (opcional)</label><input id="ghint" type="text" placeholder="Un recordatorio para vos" autocomplete="off"><small class="gate-note">No escribas acá la contraseña. Es solo una ayuda.</small></div><div id="gerror" class="gate-error"></div><button class="btn primary gate-btn" data-gate="setup-submit">Crear y entrar</button><div class="gate-warn">'+ICON.alert+' <span>Anotá tu contraseña en un lugar seguro. Si te la olvidás, <b>no se puede recuperar</b>: solo vas a poder restablecer la app y empezar de cero.</span></div><div class="gate-reset"><p>¿Ya usás esta app en otro dispositivo? Si tenés una copia de seguridad exportada desde ahí, importala directo — no hace falta crear una clave nueva, vas a desbloquear con la misma de siempre.</p><button class="btn ghost gate-btn" type="button" data-gate="import-backup">Importar copia de seguridad</button></div></div>'; }
-  function lockHTML(hint){ return '<div class="gate-card"><div class="gate-logo">'+ICON.lockBig+'</div><h1>Mis Contraseñas</h1><p class="gate-sub">Ingresá tu contraseña maestra para entrar.</p><div class="gate-field"><div class="gate-pass"><input id="gpw" class="gate-pw" type="password" placeholder="Contraseña maestra" autocomplete="current-password"><button class="icon-btn" data-gate="toggle-pw" type="button">'+ICON.eye+'</button></div></div>'+(hint?'<div class="gate-hint">'+ICON.bulb+' <span><b>Pista:</b> '+escapeHtml(hint)+'</span></div>':'')+'<div id="gerror" class="gate-error"></div><button class="btn primary gate-btn" id="gunlock" data-gate="unlock">Desbloquear</button><div id="greset" class="gate-reset" style="display:none"><p>¿Te olvidaste la contraseña? Podés restablecer la app y empezar de cero (se borran los datos guardados).</p><button class="btn danger gate-btn" data-gate="reset">Restablecer de fábrica</button></div></div>'; }
+  function lockHTML(hint){ return '<div class="gate-card"><div class="gate-logo">'+ICON.lockBig+'</div><h1>Mis Contraseñas</h1><p class="gate-sub">Ingresá tu contraseña maestra para entrar.</p><div class="gate-field"><div class="gate-pass"><input id="gpw" class="gate-pw" type="password" placeholder="Contraseña maestra" autocomplete="current-password"><button class="icon-btn" data-gate="toggle-pw" type="button">'+ICON.eye+'</button></div></div>'+(hint?'<div class="gate-hint">'+ICON.bulb+' <span><b>Pista:</b> '+escapeHtml(hint)+'</span></div>':'')+'<div id="gerror" class="gate-error"></div><button class="btn primary gate-btn" id="gunlock" data-gate="unlock">Desbloquear</button>'+(bioEnabled()&&bioSupported()?'<button class="btn ghost gate-btn" type="button" id="gbio" data-gate="bio-unlock">👆 Usar huella / Face ID</button>':'')+'<div id="greset" class="gate-reset" style="display:none"><p>¿Te olvidaste la contraseña? Podés restablecer la app y empezar de cero (se borran los datos guardados).</p><button class="btn danger gate-btn" data-gate="reset">Restablecer de fábrica</button></div></div>'; }
   function unsupportedHTML(){ return '<div class="gate-card"><div class="gate-logo">'+ICON.alert+'</div><h1>No se puede cifrar aquí</h1><p class="gate-sub">Tu navegador no habilitó el cifrado en este contexto. Abrí <b>index.html</b> con Chrome, Edge o Firefox (doble clic).</p></div>'; }
 
   function showSetup(){ appEl.style.display='none'; gate.style.display='flex'; gate.innerHTML=setupHTML(); setTimeout(()=>{const i=gate.querySelector('#gpw'); if(i)i.focus();},50); }
@@ -1978,6 +2081,19 @@
       if(n>=RESET_LIMIT){ const r=gate.querySelector('#greset'); if(r)r.style.display='block'; }
     }
   }
+  async function doBioUnlock(){
+    const btn=gate.querySelector('#gbio'); if(btn){ btn.disabled=true; btn.textContent='Verificando...'; }
+    try{
+      const pw=await bioReveal();
+      const inp=gate.querySelector('#gpw'); if(inp) inp.value=pw;
+      await doUnlock();
+    }catch(e){
+      console.error(e);
+      gateError('No se pudo usar la huella/Face ID. Ingresá tu clave maestra.');
+    } finally {
+      if(btn){ btn.disabled=false; btn.textContent='👆 Usar huella / Face ID'; }
+    }
+  }
   // Borra TODO (bóveda cifrada, intentos fallidos, marca de export) y vuelve a
   // la pantalla de "creá tu contraseña maestra". Se usa tanto desde la pantalla
   // de bloqueo (tras muchos intentos fallidos) como desde Ajustes → Zona de
@@ -1991,6 +2107,7 @@
     if(typed===null) return false;
     if(typed.trim().toUpperCase()!=='CONFIRMAR'){ alert('No se restableció nada.\n\nEl texto no coincidía con CONFIRMAR.'); return false; }
     try{ localStorage.removeItem(KEY_VAULT); localStorage.removeItem(KEY_OLD); localStorage.removeItem(KEY_FAILS); localStorage.removeItem(KEY_EXPORT); }catch(e){}
+    bioDisable();
     vault=null; cryptoKey=null; data={version:2,cards:[]}; inlineEditIds.clear(); newAccountIds.clear();
     stopTotp(); clearTimeout(inactivityTimer); showSetup();
     return true;
@@ -2002,6 +2119,7 @@
     const a=b.dataset.gate;
     if(a==='setup-submit') doSetup();
     else if(a==='unlock') doUnlock();
+    else if(a==='bio-unlock') doBioUnlock();
     else if(a==='reset') factoryReset();
     else if(a==='import-backup') importInput.click();   // reusa el mismo flujo de "Importar" del header — ver importData()
     else if(a==='toggle-pw'){ const inputs=gate.querySelectorAll('.gate-pw'); const show=inputs[0]&&inputs[0].type==='password'; inputs.forEach(i=>i.type=show?'text':'password'); b.innerHTML=show?ICON.eyeOff:ICON.eye; }
