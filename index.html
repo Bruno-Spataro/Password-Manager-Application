@@ -79,6 +79,8 @@
   .banner-inner{display:flex; align-items:center; gap:12px; background:var(--primary-soft); border:1px solid var(--border); border-radius:12px; padding:12px 15px; font-size:13.5px; color:var(--text)}
   .banner-inner svg{color:var(--primary); flex-shrink:0}
   .banner-inner .grow{flex:1}
+  .banner-inner.danger{background:var(--danger-soft); border-color:var(--danger)}
+  .banner-inner.danger svg{color:var(--danger)}
 
   .tabs-wrap{max-width:1180px; margin:0 auto; padding:18px 20px 0}
   .tabs{display:inline-flex; gap:4px; background:var(--surface); padding:5px; border-radius:13px; border:1px solid var(--border); box-shadow:var(--shadow); flex-wrap:wrap}
@@ -345,6 +347,14 @@
   </div>
 </div>
 
+<div id="weakMasterBanner" class="banner" style="display:none">
+  <div class="banner-inner danger">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+    <span class="grow"><b>⚠️ Tu contraseña maestra es débil.</b> Cualquiera que pruebe combinaciones comunes podría adivinarla. Cambiala ahora para proteger todas tus contraseñas guardadas.</span>
+    <button class="btn primary sm" id="weakMasterFix">Cambiar ahora</button>
+  </div>
+</div>
+
 <div class="tabs-wrap">
   <div class="tabs">
     <button class="tab active" data-view="active"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Activas <span class="count" id="countActive">0</span></button>
@@ -456,7 +466,7 @@
       <div id="panel-masterpw" class="settings-panel" style="display:none">
         <p>Para cambiarla, ingresá tu clave actual y después la nueva.</p>
         <label class="f">Clave actual<div class="pass-input"><input id="setCurrent" type="password" autocomplete="current-password" placeholder="Tu clave de ahora"><button type="button" class="icon-btn" data-set="toggle" title="Mostrar/ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
-        <label class="f">Nueva clave<div class="pass-input"><input id="setNew" type="password" autocomplete="new-password" placeholder="La nueva clave"><button type="button" class="icon-btn" data-set="toggle" title="Mostrar/ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
+        <label class="f">Nueva clave<div class="pass-input"><input id="setNew" type="password" autocomplete="new-password" placeholder="La nueva clave"><button type="button" class="icon-btn" data-set="toggle" title="Mostrar/ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div><div class="strength"><span class="strength-fill"></span></div><div class="strength-label"></div></label>
         <label class="f">Repetí la nueva clave<div class="pass-input"><input id="setNew2" type="password" autocomplete="new-password" placeholder="La nueva clave otra vez"><button type="button" class="icon-btn" data-set="toggle" title="Mostrar/ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
         <label class="f">Pista (opcional)<input id="setHint" type="text" autocomplete="off" placeholder="Recordatorio para la pantalla de bloqueo"></label>
         <div id="setError" class="gate-error" style="text-align:left"></div>
@@ -617,7 +627,7 @@
   // GitHub (no cada vez que se edita el archivo). Se muestra chiquito en el
   // pie de página y al final de Ajustes para ver de un vistazo si ya llegó
   // la última versión. También sirve para el aviso de "se actualizó la app".
-  const APP_VERSION='v2.37';
+  const APP_VERSION='v2.38';
   const KEY_APP_VERSION='mis_contrasenas_version_vista';
   const KEY_VAULT='mis_contrasenas_vault';
   const KEY_OLD='mis_contrasenas_v1';
@@ -749,6 +759,19 @@
     if(s<=2) return {pct:34,label:'Débil',color:'var(--danger)'};
     if(s<=4) return {pct:67,label:'Media',color:'var(--warn)'};
     return {pct:100,label:'Fuerte',color:'var(--success)'};
+  }
+  // Regla fija para la clave maestra (no es el mismo puntaje de "fuerza" que
+  // se usa para las contraseñas de cada cuenta): acá no alcanza con que dé
+  // "Media" o "Fuerte" en el puntaje general, porque ese puntaje puede dar
+  // bien con patrones comunes (ej. "Password1!"). Se exige explícitamente
+  // tener letra + número + símbolo, para evitar justamente eso.
+  function masterPwIssue(pw){
+    if(pw.length<8) return 'La clave maestra debe tener al menos 8 caracteres.';
+    if(!/[a-z]/.test(pw)) return 'Le falta al menos una letra minúscula.';
+    if(!/[A-Z]/.test(pw)) return 'Le falta al menos una letra mayúscula.';
+    if(!/\d/.test(pw)) return 'Le falta al menos un número.';
+    if(!/[^A-Za-z0-9]/.test(pw)) return 'Le falta al menos un símbolo (ej. ! ? # @ %).';
+    return null;
   }
   function updateStrength(input){
     const label=input.closest('label.f'); if(!label) return;
@@ -1863,6 +1886,7 @@
   function updateAutoLockMinRowVisibility(){ $('autoLockMinRow').style.display=autoLockOn?'flex':'none'; }
   function openSettings(){
     ['setCurrent','setNew','setNew2'].forEach(id=>{ const el=$(id); el.value=''; el.type='password'; });
+    updateStrength($('setNew'));
     $('setDefaultEmail').value=data.defaultEmail||'';
     $('setEmailMsg').textContent='';
     $('setHint').value=vaultHint||'';
@@ -1911,7 +1935,8 @@
   async function saveSettings(){
     const cur=$('setCurrent').value, nw=$('setNew').value, nw2=$('setNew2').value, hint=$('setHint').value.trim();
     if(!cur){ setSettingsError('Ingresá tu clave actual.'); return; }
-    if(nw.length<4){ setSettingsError('La nueva clave debe tener al menos 4 caracteres.'); return; }
+    const nwIssue=masterPwIssue(nw);
+    if(nwIssue){ setSettingsError(nwIssue); return; }
     if(nw!==nw2){ setSettingsError('La nueva clave y su repetición no coinciden.'); return; }
     setSettingsError('');
     const btn=settingsOverlay.querySelector('[data-set="save"]'); btn.disabled=true; btn.textContent='Guardando...';
@@ -1919,6 +1944,7 @@
       const hadBio=bioEnabled();
       await changeMasterPassword(cur,nw,hint);
       if(hadBio) bioDisable();
+      masterPwWeak=false; updateWeakMasterBanner();
       closeSettings();
       toast(hadBio ? 'Clave maestra actualizada. El desbloqueo con huella se desactivó, podés volver a activarlo.' : 'Clave maestra actualizada');
     }
@@ -2035,6 +2061,7 @@
       else $('bioError').textContent='La clave maestra no es correcta.';
     } finally { btn.disabled=false; btn.textContent='Confirmar'; }
   }
+  settingsOverlay.addEventListener('input',e=>{ if(e.target.id==='setNew') updateStrength(e.target); });
   settingsOverlay.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeSettings();return;} if(e.key==='Enter'){ e.preventDefault(); if(e.target&&e.target.id==='setDefaultEmail') saveDefaultEmail(); else if(e.target&&e.target.id!=='setAutoLockMin') saveSettings(); } });
 
   /* ---------- pantalla bloqueo / setup ---------- */
@@ -2044,27 +2071,33 @@
   function setFails(n){ try{ localStorage.setItem(KEY_FAILS,String(n)); }catch(e){} }
   function gateError(m){ const e=gate.querySelector('#gerror'); if(e)e.textContent=m||''; }
 
-  function setupHTML(){ return '<div class="gate-card"><div class="gate-logo">'+ICON.shield+'</div><h1>Creá tu contraseña maestra</h1><p class="gate-sub">Con esta clave se cifra todo. Te la vamos a pedir cada vez que abras la app.</p><div class="gate-field"><label>Contraseña maestra</label><div class="gate-pass"><input id="gpw" class="gate-pw" type="password" placeholder="Elegí una clave" autocomplete="new-password"><button class="icon-btn" data-gate="toggle-pw" type="button">'+ICON.eye+'</button></div></div><div class="gate-field"><label>Repetí la contraseña</label><input id="gpw2" class="gate-pw" type="password" placeholder="La misma de arriba" autocomplete="new-password"></div><div class="gate-field"><label>Pista (opcional)</label><input id="ghint" type="text" placeholder="Un recordatorio para vos" autocomplete="off"><small class="gate-note">No escribas acá la contraseña. Es solo una ayuda.</small></div><div id="gerror" class="gate-error"></div><button class="btn primary gate-btn" data-gate="setup-submit">Crear y entrar</button><div class="gate-warn">'+ICON.alert+' <span>Anotá tu contraseña en un lugar seguro. Si te la olvidás, <b>no se puede recuperar</b>: solo vas a poder restablecer la app y empezar de cero.</span></div><div class="gate-reset"><p>¿Ya usás esta app en otro dispositivo? Si tenés una copia de seguridad exportada desde ahí, importala directo — no hace falta crear una clave nueva, vas a desbloquear con la misma de siempre.</p><button class="btn ghost gate-btn" type="button" data-gate="import-backup">Importar copia de seguridad</button></div></div>'; }
+  function setupHTML(){ return '<div class="gate-card"><div class="gate-logo">'+ICON.shield+'</div><h1>Creá tu contraseña maestra</h1><p class="gate-sub">Con esta clave se cifra todo. Te la vamos a pedir cada vez que abras la app.</p><div class="gate-field"><label>Contraseña maestra</label><div class="gate-pass"><input id="gpw" class="gate-pw" type="password" placeholder="Elegí una clave" autocomplete="new-password"><button class="icon-btn" data-gate="toggle-pw" type="button">'+ICON.eye+'</button></div><div class="strength"><span class="strength-fill" id="gStrengthFill"></span></div><div class="strength-label" id="gStrengthLabel"></div><small class="gate-note">Mínimo 8 caracteres, con mayúsculas, minúsculas, números y símbolos (ej. ! ? # @ %).</small></div><div class="gate-field"><label>Repetí la contraseña</label><input id="gpw2" class="gate-pw" type="password" placeholder="La misma de arriba" autocomplete="new-password"></div><div class="gate-field"><label>Pista (opcional)</label><input id="ghint" type="text" placeholder="Un recordatorio para vos" autocomplete="off"><small class="gate-note">No escribas acá la contraseña. Es solo una ayuda.</small></div><div id="gerror" class="gate-error"></div><button class="btn primary gate-btn" data-gate="setup-submit">Crear y entrar</button><div class="gate-warn">'+ICON.alert+' <span>Anotá tu contraseña en un lugar seguro. Si te la olvidás, <b>no se puede recuperar</b>: solo vas a poder restablecer la app y empezar de cero.</span></div><div class="gate-reset"><p>¿Ya usás esta app en otro dispositivo? Si tenés una copia de seguridad exportada desde ahí, importala directo — no hace falta crear una clave nueva, vas a desbloquear con la misma de siempre.</p><button class="btn ghost gate-btn" type="button" data-gate="import-backup">Importar copia de seguridad</button></div></div>'; }
   function lockHTML(hint){ return '<div class="gate-card"><div class="gate-logo">'+ICON.lockBig+'</div><h1>Mis Contraseñas</h1><p class="gate-sub">Ingresá tu contraseña maestra para entrar.</p><div class="gate-field"><div class="gate-pass"><input id="gpw" class="gate-pw" type="password" placeholder="Contraseña maestra" autocomplete="current-password"><button class="icon-btn" data-gate="toggle-pw" type="button">'+ICON.eye+'</button></div></div>'+(hint?'<div class="gate-hint">'+ICON.bulb+' <span><b>Pista:</b> '+escapeHtml(hint)+'</span></div>':'')+'<div id="gerror" class="gate-error"></div><button class="btn primary gate-btn" id="gunlock" data-gate="unlock">Desbloquear</button>'+(bioEnabled()&&bioSupported()?'<button class="btn ghost gate-btn" type="button" id="gbio" data-gate="bio-unlock">👆 Usar huella / Face ID</button>':'')+'<div id="greset" class="gate-reset" style="display:none"><p>¿Te olvidaste la contraseña? Podés restablecer la app y empezar de cero (se borran los datos guardados).</p><button class="btn danger gate-btn" data-gate="reset">Restablecer de fábrica</button></div></div>'; }
   function unsupportedHTML(){ return '<div class="gate-card"><div class="gate-logo">'+ICON.alert+'</div><h1>No se puede cifrar aquí</h1><p class="gate-sub">Tu navegador no habilitó el cifrado en este contexto. Abrí <b>index.html</b> con Chrome, Edge o Firefox (doble clic).</p></div>'; }
 
   function showSetup(){ appEl.style.display='none'; gate.style.display='flex'; gate.innerHTML=setupHTML(); setTimeout(()=>{const i=gate.querySelector('#gpw'); if(i)i.focus();},50); }
   function showLock(){ vault=JSON.parse(localStorage.getItem(KEY_VAULT)||'null'); appEl.style.display='none'; gate.style.display='flex'; gate.innerHTML=lockHTML(vault&&vault.hint); if(getFails()>=RESET_LIMIT){ const r=gate.querySelector('#greset'); if(r)r.style.display='block'; } setTimeout(()=>{const i=gate.querySelector('#gpw'); if(i)i.focus();},50); }
+  let masterPwWeak=false;
+  // El flag vive solo en memoria de esta sesión: se recalcula cada vez que
+  // se desbloquea (ahí es cuando se tiene la clave en texto plano por un
+  // instante) porque esa clave nunca se guarda en ningún lado.
+  function updateWeakMasterBanner(){ const b=$('weakMasterBanner'); if(b) b.style.display=masterPwWeak?'block':'none'; }
   function enterApp(){
     gate.style.display='none'; gate.innerHTML='';
     appEl.style.display=''; currentView='active'; searchQuery=''; categoryFilter=''; bannerDismissed=false;
     inlineEditIds.clear(); newAccountIds.clear();
     const s=$('search'); if(s)s.value=''; $('clearSearch').style.display='none';
-    purgeTrash(); render(); maybeShowBanner(); startTotp(); resetInactivity();
+    purgeTrash(); render(); maybeShowBanner(); updateWeakMasterBanner(); startTotp(); resetInactivity();
   }
   function getExistingPlaintext(){ try{ const raw=localStorage.getItem(KEY_OLD); if(raw) return normalize(JSON.parse(raw)); }catch(e){} return {version:2,cards:[]}; }
 
   async function doSetup(){
     const pw=gate.querySelector('#gpw').value, pw2=gate.querySelector('#gpw2').value, hint=gate.querySelector('#ghint').value.trim();
-    if(pw.length<4){ gateError('La contraseña debe tener al menos 4 caracteres.'); return; }
+    const pwIssue=masterPwIssue(pw);
+    if(pwIssue){ gateError(pwIssue); return; }
     if(pw!==pw2){ gateError('Las contraseñas no coinciden.'); return; }
     gateError('');
-    try{ data=getExistingPlaintext(); const salt=crypto.getRandomValues(new Uint8Array(16)); vaultSaltB64=bufToB64(salt); vaultHint=hint; cryptoKey=await deriveKey(pw,salt); await save(); localStorage.removeItem(KEY_OLD); setFails(0); enterApp(); }
+    try{ data=getExistingPlaintext(); const salt=crypto.getRandomValues(new Uint8Array(16)); vaultSaltB64=bufToB64(salt); vaultHint=hint; cryptoKey=await deriveKey(pw,salt); await save(); localStorage.removeItem(KEY_OLD); setFails(0); masterPwWeak=false; enterApp(); }
     catch(e){ console.error(e); gateError('No se pudo crear la clave. Probá de nuevo.'); }
   }
   async function doUnlock(){
@@ -2073,7 +2106,9 @@
     try{
       const key=await deriveKey(pw,b64ToBuf(vault.salt),vault.iters);
       const obj=await decryptData(key,vault.iv,vault.ct);
-      cryptoKey=key; vaultSaltB64=vault.salt; vaultHint=vault.hint||''; data=normalize(obj); setFails(0); enterApp();
+      cryptoKey=key; vaultSaltB64=vault.salt; vaultHint=vault.hint||''; data=normalize(obj); setFails(0);
+      masterPwWeak=!!masterPwIssue(pw);
+      enterApp();
     }catch(e){
       const n=getFails()+1; setFails(n); btn.disabled=false; btn.textContent='Desbloquear';
       gateError('Contraseña incorrecta. Intento '+n+'.');
@@ -2125,6 +2160,13 @@
     else if(a==='toggle-pw'){ const inputs=gate.querySelectorAll('.gate-pw'); const show=inputs[0]&&inputs[0].type==='password'; inputs.forEach(i=>i.type=show?'text':'password'); b.innerHTML=show?ICON.eyeOff:ICON.eye; }
   });
   gate.addEventListener('keydown',e=>{ if(e.key!=='Enter')return; if(gate.querySelector('[data-gate="setup-submit"]')) doSetup(); else if(gate.querySelector('[data-gate="unlock"]')) doUnlock(); });
+  gate.addEventListener('input',e=>{
+    if(e.target.id!=='gpw') return;
+    const fill=$('gStrengthFill'), lab=$('gStrengthLabel'); if(!fill||!lab) return;
+    const r=scorePassword(e.target.value);
+    fill.style.width=r.pct+'%'; fill.style.background=r.color;
+    lab.textContent=r.label?('Seguridad: '+r.label):''; lab.style.color=r.color;
+  });
 
   /* ---------- bloqueo automático por inactividad ---------- */
   function resetInactivity(){
@@ -2174,6 +2216,7 @@
   });
   $('bannerExport').addEventListener('click',exportData);
   $('bannerClose').addEventListener('click',hideBanner);
+  $('weakMasterFix').addEventListener('click',()=>{ openSettings(); showSettingsPanel('masterpw'); });
   $('emptyTrashBtn').addEventListener('click',emptyTrash);
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&overlay.classList.contains('open'))closeModal(); if((e.ctrlKey||e.metaKey)&&e.key==='Enter'&&overlay.classList.contains('open'))saveModal(); });
   // Recalcular columnas al cambiar el ancho (solo si cambia la cantidad y no estás en medio de una edición)
