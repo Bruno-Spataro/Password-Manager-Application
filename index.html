@@ -502,6 +502,10 @@
           <div><div class="lbl">Avisar cuando se actualiza la app</div><div class="desc">Te manda una notificación del celular/navegador cuando se instala una versión nueva. La primera vez te va a pedir permiso.</div></div>
           <label class="switch"><input type="checkbox" id="setNotifyUpdates"><span class="switch-track"><span class="switch-thumb"></span></span></label>
         </div>
+        <div class="settings-row" id="exportPickerRow" style="display:none">
+          <div><div class="lbl">Elegir carpeta al exportar</div><div class="desc">Al tocar "Exportar", te deja elegir la carpeta y el nombre del archivo en vez de ir siempre a Descargas. Solo funciona en Chrome o Edge de PC.</div></div>
+          <label class="switch"><input type="checkbox" id="setExportPicker"><span class="switch-track"><span class="switch-thumb"></span></span></label>
+        </div>
         <div class="settings-row" id="bioRow" style="display:none">
           <div><div class="lbl">Desbloqueo rápido con huella / Face ID</div><div class="desc">Para no tener que escribir la clave maestra cada vez. Queda guardada cifrada y protegida por el sensor de este equipo; no reemplaza tu clave maestra.</div></div>
           <label class="switch"><input type="checkbox" id="setBioUnlock"><span class="switch-track"><span class="switch-thumb"></span></span></label>
@@ -627,7 +631,7 @@
   // GitHub (no cada vez que se edita el archivo). Se muestra chiquito en el
   // pie de página y al final de Ajustes para ver de un vistazo si ya llegó
   // la última versión. También sirve para el aviso de "se actualizó la app".
-  const APP_VERSION='v2.38';
+  const APP_VERSION='v2.39';
   const KEY_APP_VERSION='mis_contrasenas_version_vista';
   const KEY_VAULT='mis_contrasenas_vault';
   const KEY_OLD='mis_contrasenas_v1';
@@ -641,6 +645,7 @@
   const KEY_NOTIFY_UPDATES='mis_contrasenas_notify_updates'; // '1'/'0' — notificación del navegador al actualizar
   const KEY_LOCK_BG='mis_contrasenas_lock_bg';               // '1'/'0' — bloquear al mandar la app a segundo plano
   const KEY_BIO='mis_contrasenas_bio';                       // clave maestra envuelta con huella/Face ID (o ausente si está desactivado)
+  const KEY_EXPORT_PICKER='mis_contrasenas_export_picker';   // '1'/'0' — al exportar, elegir carpeta con "Guardar como" (Chrome/Edge PC)
   const KEY_VIEW_MODE='mis_contrasenas_vista';             // 'cards' | 'list'
   const KEY_SORT_MODE='mis_contrasenas_orden';             // manual | az | za | newest | oldest
   const RESET_LIMIT=10;
@@ -677,6 +682,7 @@
   let healthPanelOn=true;
   let notifyUpdatesOn=false;
   let lockOnBgOn=true;
+  let exportPickerOn=false;
   let viewMode='cards'; // 'cards' | 'list'
 
   let cryptoKey=null, vaultSaltB64=null, vaultHint='', vault=null;
@@ -1680,13 +1686,30 @@
   /* ---------- exportar / importar ---------- */
   function dateStr(){ return new Date().toISOString().slice(0,10); }
   function downloadText(text,filename){ const blob=new Blob([text],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
-  function exportData(){
+  function markExported(){ localStorage.setItem(KEY_EXPORT,String(Date.now())); hideBanner(); toast('Copia de seguridad (cifrada) exportada'); }
+  async function exportData(){
     const raw=localStorage.getItem(KEY_VAULT);
     if(!raw){ toast('No hay datos para exportar'); return; }
-    downloadText(raw,'contrasenas-cifrado-'+dateStr()+'.json');
-    localStorage.setItem(KEY_EXPORT,String(Date.now()));
-    hideBanner();
-    toast('Copia de seguridad (cifrada) exportada');
+    const filename='contrasenas-cifrado-'+dateStr()+'.json';
+    // En Chrome/Edge de PC se puede elegir la carpeta de destino con un
+    // cuadro de "Guardar como" (File System Access API). En navegadores que
+    // no lo soportan (Safari, Firefox, celulares), se usa el método de
+    // siempre: se descarga a la carpeta de Descargas por defecto.
+    if(exportPickerOn&&window.showSaveFilePicker){
+      try{
+        const handle=await window.showSaveFilePicker({suggestedName:filename, types:[{description:'Copia de seguridad cifrada', accept:{'application/json':['.json']}}]});
+        const writable=await handle.createWritable();
+        await writable.write(raw);
+        await writable.close();
+        markExported();
+        return;
+      }catch(e){
+        if(e&&e.name==='AbortError') return; // el usuario cerró el cuadro sin elegir nada
+        // si falló por otro motivo, seguimos con el método de siempre
+      }
+    }
+    downloadText(raw,filename);
+    markExported();
   }
   const importInput=document.createElement('input'); importInput.type='file'; importInput.accept='application/json,.json'; importInput.style.display='none'; document.body.appendChild(importInput);
   importInput.addEventListener('change',()=>{ const f=importInput.files[0]; if(f) importData(f); importInput.value=''; });
@@ -1899,6 +1922,8 @@
     // Si el usuario le sacó el permiso de notificaciones desde el navegador
     // (no desde acá), reflejarlo apagado aunque la preferencia guardada diga que sí.
     $('setNotifyUpdates').checked = notifyUpdatesOn && (typeof Notification==='undefined' || Notification.permission==='granted');
+    $('exportPickerRow').style.display = window.showSaveFilePicker ? 'flex' : 'none';
+    $('setExportPicker').checked = exportPickerOn;
     $('bioRow').style.display = bioSupported() ? 'flex' : 'none';
     $('setBioUnlock').checked = bioEnabled();
     $('bioConfirmRow').style.display='none';
@@ -1991,6 +2016,10 @@
       lockOnBgOn=t.checked;
       try{ localStorage.setItem(KEY_LOCK_BG, lockOnBgOn?'1':'0'); }catch(_){}
       toast(lockOnBgOn?'Bloqueo al salir activado':'Bloqueo al salir desactivado');
+    } else if(t.id==='setExportPicker'){
+      exportPickerOn=t.checked;
+      try{ localStorage.setItem(KEY_EXPORT_PICKER, exportPickerOn?'1':'0'); }catch(_){}
+      toast(exportPickerOn?'Ahora vas a poder elegir la carpeta al exportar':'Vuelve a exportar directo a Descargas');
     } else if(t.id==='setAutoReorg'){
       autoReorgOn=t.checked;
       try{ localStorage.setItem(KEY_AUTOREORG, autoReorgOn?'1':'0'); }catch(_){}
@@ -2233,6 +2262,7 @@
     }catch(e){}
     try{ autoReorgOn = localStorage.getItem(KEY_AUTOREORG)!=='0'; }catch(e){}
     try{ lockOnBgOn = localStorage.getItem(KEY_LOCK_BG)!=='0'; }catch(e){}
+    try{ exportPickerOn = localStorage.getItem(KEY_EXPORT_PICKER)==='1'; }catch(e){}
     try{ healthPanelOn = localStorage.getItem(KEY_HEALTH_PANEL)!=='0'; }catch(e){}
     try{ notifyUpdatesOn = localStorage.getItem(KEY_NOTIFY_UPDATES)==='1'; }catch(e){}
     try{ viewMode = localStorage.getItem(KEY_VIEW_MODE)==='list'?'list':'cards'; }catch(e){}
