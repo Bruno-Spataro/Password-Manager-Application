@@ -27,6 +27,7 @@
     --shadow:0 1px 3px rgba(20,24,40,.06), 0 8px 24px rgba(20,24,40,.06);
     --shadow-lg:0 12px 40px rgba(20,24,40,.18);
     --radius:16px; --radius-sm:10px;
+    color-scheme:light;
   }
   [data-theme="dark"]{
     --bg:#0e1016; --bg2:#0b0d12;
@@ -38,14 +39,16 @@
     --success:#34d399; --warn:#fbbf24;
     --shadow:0 1px 3px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.3);
     --shadow-lg:0 12px 40px rgba(0,0,0,.5);
+    color-scheme:dark;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
-  html{background:var(--bg)}
+  html{background:var(--bg); -webkit-tap-highlight-color:transparent}
+  button,input,select,textarea{touch-action:manipulation}  /* sin demora ni zoom por doble toque en el celu */
   body{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     background:linear-gradient(180deg,var(--bg),var(--bg2));
-    color:var(--text); min-height:100vh; line-height:1.45; -webkit-font-smoothing:antialiased;
+    color:var(--text); min-height:100vh; min-height:100dvh; line-height:1.45; -webkit-font-smoothing:antialiased;
   }
   header{position:sticky; top:0; z-index:30; background:var(--surface); border-bottom:1px solid var(--border)}
   .header-inner{max-width:1180px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap}
@@ -126,7 +129,7 @@
   .grid{display:flex; gap:18px; align-items:flex-start}
   .grid-col{flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:18px}
   .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column; transition:box-shadow .2s, transform .2s}
-  .card:hover{box-shadow:var(--shadow-lg); transform:translateY(-2px)}
+  @media (hover:hover){ .card:hover{box-shadow:var(--shadow-lg); transform:translateY(-2px)} }  /* en táctil el hover queda "pegado" después de tocar */
   /* vista lista: una sola columna, prolija, sin cuadros flotando por todos lados */
   .grid.list-mode{gap:8px}
   .grid.list-mode .grid-col{gap:8px}
@@ -174,10 +177,9 @@
   .account-actions{display:flex; gap:1px; flex-shrink:0}
   .account-badges{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px}
   .badge{font-size:11px; font-weight:600; padding:3px 8px; border-radius:20px; display:inline-flex; align-items:center; gap:4px; max-width:100%}
-  .badge.reuse{background:var(--danger-soft); color:var(--danger); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:help}
+  .badge.reuse,.badge.weak,.badge.pwned{background:var(--danger-soft); color:var(--danger)}
+  .badge.reuse{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:help}
   .badge.old{background:rgba(245,158,11,.12); color:var(--warn)}
-  .badge.weak{background:var(--danger-soft); color:var(--danger)}
-  .badge.pwned{background:var(--danger-soft); color:var(--danger)}
   .field{margin-top:8px}
   .field-label{font-size:11px; font-weight:600; color:var(--faint); text-transform:uppercase; letter-spacing:.5px}
   .value-row{display:flex; align-items:center; gap:6px; margin-top:2px}
@@ -188,10 +190,6 @@
   .empty-accounts{padding:14px; text-align:center; color:var(--faint); font-size:13.5px}
   .add-account{margin:0 8px 10px; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer; border:1px dashed var(--border-2); background:transparent; color:var(--muted); font-family:inherit; font-size:13.5px; font-weight:600; padding:10px; border-radius:var(--radius-sm); transition:.15s}
   .add-account:hover{border-color:var(--primary); color:var(--primary); background:var(--primary-soft)}
-  .totp{display:flex; align-items:center; gap:8px; margin-top:2px}
-  .totp-digits{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:19px; font-weight:700; letter-spacing:2px; color:var(--text)}
-  .totp-secs{font-size:12px; font-weight:600; color:var(--muted); min-width:32px}
-
   .ie{display:flex; flex-direction:column; gap:9px}
   .f{display:flex; flex-direction:column; gap:4px; font-size:12px; font-weight:600; color:var(--muted)}
   .f .opt{color:var(--faint); font-weight:500}
@@ -224,7 +222,7 @@
   @keyframes pop{from{opacity:0; transform:translateY(10px) scale(.98)} to{opacity:1; transform:none}}
   .modal-head{display:flex; align-items:center; justify-content:space-between; padding:18px 20px; border-bottom:1px solid var(--border)}
   .modal-head h2{margin:0; font-size:18px; font-weight:700}
-  .modal-body{padding:18px 20px; max-height:64vh; overflow-y:auto}
+  .modal-body{padding:18px 20px; max-height:64vh; max-height:64dvh; overflow-y:auto}
   .modal-body>label.f{margin-bottom:14px}
   .accounts-editor-label{font-size:12px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:.5px; margin:6px 0 10px}
   .modal-account{background:var(--surface-2); border:1px solid var(--border); border-radius:12px; padding:13px; margin-bottom:11px; display:flex; flex-direction:column; gap:10px}
@@ -250,7 +248,7 @@
   .settings-nav-item:hover{background:var(--surface-2)}
   .settings-nav-item .lbl{font-weight:700; font-size:15px}
   .settings-nav-item .desc{font-size:12.5px; color:var(--muted); margin-top:3px}
-  .settings-nav-item svg{color:var(--faint); flex-shrink:0}
+  .settings-nav-item [data-icon]{display:flex; color:var(--faint); flex-shrink:0}
   .settings-nav-item.danger .lbl{color:var(--danger)}
   /* interruptor tipo iOS, hecho con un checkbox nativo (accesible) + 2 spans pintados */
   .switch{position:relative; display:inline-block; width:44px; height:26px; flex-shrink:0}
@@ -260,7 +258,6 @@
   .switch input:checked+.switch-track{background:var(--primary)}
   .switch input:checked+.switch-track .switch-thumb{transform:translateX(18px)}
   .switch input:focus-visible+.switch-track{box-shadow:0 0 0 3px var(--primary-soft)}
-  .danger-zone p{color:var(--muted)}
 
   #toast{position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--text); color:var(--surface); padding:11px 20px; border-radius:12px; font-size:14px; font-weight:600; box-shadow:var(--shadow-lg); z-index:80; opacity:0; pointer-events:none; transition:.2s; display:flex; align-items:center; gap:9px; max-width:90vw}
   #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
@@ -268,8 +265,9 @@
   footer{max-width:1180px; margin:0 auto; padding:0 20px 40px; text-align:center; color:var(--faint); font-size:12.5px}
   footer .sec svg{vertical-align:-3px; margin-right:6px}
 
-  #gate{position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; padding:24px; background:linear-gradient(180deg,var(--bg),var(--bg2))}
-  .gate-card{width:100%; max-width:400px; background:var(--surface); border:1px solid var(--border); border-radius:22px; box-shadow:var(--shadow-lg); padding:30px 26px; text-align:center; animation:pop .2s ease}
+  /* margin:auto (en vez de align/justify center) centra la tarjeta pero, si es más alta que la pantalla, deja scrollear hasta arriba */
+  #gate{position:fixed; inset:0; z-index:60; display:none; padding:24px; overflow-y:auto; background:linear-gradient(180deg,var(--bg),var(--bg2))}
+  .gate-card{margin:auto; width:100%; max-width:400px; background:var(--surface); border:1px solid var(--border); border-radius:22px; box-shadow:var(--shadow-lg); padding:30px 26px; text-align:center; animation:pop .2s ease}
   .gate-logo{width:60px; height:60px; border-radius:17px; margin:0 auto 16px; background:linear-gradient(135deg,var(--primary),var(--primary-d)); display:grid; place-items:center; color:#fff; box-shadow:0 8px 20px rgba(99,102,241,.4)}
   .gate-card h1{margin:0 0 6px; font-size:21px; letter-spacing:-.3px}
   .gate-sub{margin:0 0 22px; color:var(--muted); font-size:14px}
@@ -290,6 +288,7 @@
   .gate-reset{margin-top:18px; padding-top:18px; border-top:1px solid var(--border)}
   .gate-reset p{font-size:13px; color:var(--muted); margin:0 0 10px}
   @media (max-width:560px){
+    header{position:static}   /* en el celu el encabezado ocupa 3 filas: fijo se comía ~30% de la pantalla */
     .header-inner{padding:12px 14px}
     .brand small{display:none}
     .tabs-wrap, main, footer, .banner{padding-left:14px; padding-right:14px}
@@ -299,6 +298,14 @@
     .banner-inner{flex-wrap:wrap; align-items:flex-start}
     .banner-inner #bannerExport, .banner-inner #updateReload{order:3; flex:1 1 100%; margin-top:2px}
   }
+  /* Pantallas táctiles (celu / tablet) */
+  @media (pointer:coarse){
+    /* iPhone hace zoom solo al tocar un campo con letra menor a 16px */
+    .search input, .gate-field input, .f input, .f textarea, .modal-account input, .modal-account textarea, .modal-body>label.f input, .settings-row input[type=number]{font-size:16px}
+    .icon-btn.sm{width:36px; height:36px}
+    .overlay{backdrop-filter:none; background:rgba(15,17,23,.7)}  /* el difuminado pesa mucho en el celu y trababa los paneles */
+  }
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important; transition:none!important} }
 </style>
 </head>
 <body>
@@ -314,12 +321,12 @@
     </div>
     <div class="search">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-      <input id="search" type="text" placeholder="Buscar por título, usuario, nota..." autocomplete="off">
+      <input id="search" type="text" placeholder="Buscar por título, usuario, nota..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
       <button class="clear" id="clearSearch" title="Limpiar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="header-actions">
-      <button class="icon-btn" id="settingsBtn" title="Ajustes"></button>
-      <button class="icon-btn" id="lockBtn" title="Bloquear ahora"></button>
+      <button class="icon-btn" id="settingsBtn" title="Ajustes" data-icon="gear"></button>
+      <button class="icon-btn" id="lockBtn" title="Bloquear ahora" data-icon="lockSm"></button>
       <button class="icon-btn" id="themeBtn" title="Cambiar tema"></button>
       <button class="icon-btn" id="viewModeBtn" title="Cambiar a vista lista"></button>
       <button class="icon-btn" id="importBtn" title="Importar copia de seguridad"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 9 5-5 5 5"/><path d="M12 4v12"/></svg></button>
@@ -390,11 +397,11 @@
   <div class="modal" role="dialog" aria-modal="true">
     <div class="modal-head">
       <h2 id="modalTitle">Nueva entrada</h2>
-      <button class="icon-btn" data-action="modal-cancel" title="Cerrar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      <button class="icon-btn" data-action="modal-cancel" title="Cerrar" data-icon="close"></button>
     </div>
     <div class="modal-body">
       <label class="f">Título<input id="modalTitleInput" type="text" placeholder="Ej: Gmail, Banco, Hospital..." autocomplete="off"></label>
-      <label class="f">Sitio web (URL) <span class="opt">(opcional)</span><input id="modalUrl" type="text" placeholder="Ej: gmail.com" autocomplete="off"></label>
+      <label class="f">Sitio web (URL) <span class="opt">(opcional)</span><input id="modalUrl" type="text" inputmode="url" placeholder="Ej: gmail.com" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
       <label class="f">Categoría <span class="opt">(opcional)</span><input id="modalCategory" type="text" list="catList" placeholder="Ej: Redes, Bancos, Juegos" autocomplete="off"></label>
       <datalist id="catList"></datalist>
       <div class="accounts-editor-label">Cuentas</div>
@@ -415,34 +422,34 @@
   <div class="modal" role="dialog" aria-modal="true">
     <div class="modal-head">
       <div style="display:flex; align-items:center; gap:8px; min-width:0">
-        <button class="icon-btn" id="settingsBack" data-set="back" title="Volver" style="display:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+        <button class="icon-btn" id="settingsBack" data-set="back" title="Volver" style="display:none" data-icon="chevL"></button>
         <h2 id="settingsTitle" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap">Ajustes</h2>
       </div>
-      <button class="icon-btn" data-set="close" title="Cerrar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      <button class="icon-btn" data-set="close" title="Cerrar" data-icon="close"></button>
     </div>
     <div class="modal-body">
 
       <!-- Menú principal -->
-      <div id="settingsMenu" class="settings-menu">
+      <div id="settingsMenu">
         <button type="button" class="settings-nav-item" data-set="nav" data-nav="email">
           <div><div class="lbl">Correo / usuario predeterminado</div><div class="desc">Autocompletar con Tab en cualquier cuenta.</div></div>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          <span data-icon="chevR"></span>
         </button>
         <button type="button" class="settings-nav-item" data-set="nav" data-nav="masterpw">
           <div><div class="lbl">Cambiar clave maestra</div><div class="desc">La clave con la que entrás a la app.</div></div>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          <span data-icon="chevR"></span>
         </button>
         <button type="button" class="settings-nav-item" data-set="nav" data-nav="prefs">
           <div><div class="lbl">Preferencias</div><div class="desc">Bloqueo automático, columnas, notificaciones.</div></div>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          <span data-icon="chevR"></span>
         </button>
         <button type="button" class="settings-nav-item" data-set="nav" data-nav="importcsv">
           <div><div class="lbl">Importar contraseñas (CSV)</div><div class="desc">Sumá las que ya tenés guardadas en Chrome u otro navegador.</div></div>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          <span data-icon="chevR"></span>
         </button>
         <button type="button" class="settings-nav-item danger" data-set="nav" data-nav="danger">
           <div><div class="lbl">Zona de peligro</div><div class="desc">Borrar todos los datos.</div></div>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          <span data-icon="chevR"></span>
         </button>
         <div style="text-align:center; font-size:11px; color:var(--faint); margin-top:14px" id="settingsVersion"></div>
       </div>
@@ -458,16 +465,16 @@
       <!-- Panel: correo predeterminado -->
       <div id="panel-email" class="settings-panel" style="display:none">
         <p>Cargá tu mail más usado. Después, en el campo "Usuario / correo" de cualquier cuenta, lo tocás y apretás <b>Tab</b> y se autocompleta solo (igual lo podés cambiar a mano).</p>
-        <label class="f">Tu correo o usuario<div class="pass-input"><input id="setDefaultEmail" type="text" autocomplete="off" placeholder="Ej: usuario@gmail.com"><button type="button" class="btn primary sm" data-set="save-email" style="flex-shrink:0">Guardar</button></div></label>
+        <label class="f">Tu correo o usuario<div class="pass-input"><input id="setDefaultEmail" type="text" inputmode="email" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Ej: usuario@gmail.com"><button type="button" class="btn primary sm" data-set="save-email" style="flex-shrink:0">Guardar</button></div></label>
         <div id="setEmailMsg" style="font-size:12.5px;font-weight:600;color:var(--success);min-height:16px"></div>
       </div>
 
       <!-- Panel: cambiar clave maestra -->
       <div id="panel-masterpw" class="settings-panel" style="display:none">
         <p>Para cambiarla, ingresá tu clave actual y después la nueva.</p>
-        <label class="f">Clave actual<div class="pass-input"><input id="setCurrent" type="password" autocomplete="current-password" placeholder="Tu clave de ahora"><button type="button" class="icon-btn" data-set="toggle" title="Mostrar/ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
-        <label class="f">Nueva clave<div class="pass-input"><input id="setNew" type="password" autocomplete="new-password" placeholder="La nueva clave"><button type="button" class="icon-btn" data-set="toggle" title="Mostrar/ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div><div class="strength"><span class="strength-fill"></span></div><div class="strength-label"></div></label>
-        <label class="f">Repetí la nueva clave<div class="pass-input"><input id="setNew2" type="password" autocomplete="new-password" placeholder="La nueva clave otra vez"><button type="button" class="icon-btn" data-set="toggle" title="Mostrar/ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
+        <label class="f">Clave actual<div class="pass-input"><input id="setCurrent" type="password" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Tu clave de ahora"><button type="button" class="icon-btn" data-set="toggle" title="Mostrar/ocultar"></button></div></label>
+        <label class="f">Nueva clave<div class="pass-input"><input id="setNew" type="password" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="La nueva clave"><button type="button" class="icon-btn" data-set="toggle" title="Mostrar/ocultar"></button></div><div class="strength"><span class="strength-fill"></span></div><div class="strength-label"></div></label>
+        <label class="f">Repetí la nueva clave<div class="pass-input"><input id="setNew2" type="password" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="La nueva clave otra vez"><button type="button" class="icon-btn" data-set="toggle" title="Mostrar/ocultar"></button></div></label>
         <label class="f">Pista (opcional)<input id="setHint" type="text" autocomplete="off" placeholder="Recordatorio para la pantalla de bloqueo"></label>
         <div id="setError" class="gate-error" style="text-align:left"></div>
         <div style="display:flex; justify-content:flex-end; gap:9px; margin-top:16px">
@@ -511,7 +518,7 @@
           <label class="switch"><input type="checkbox" id="setBioUnlock"><span class="switch-track"><span class="switch-thumb"></span></span></label>
         </div>
         <div id="bioConfirmRow" style="display:none; padding:0 0 12px">
-          <label class="f">Confirmá tu clave maestra para activarlo<div class="pass-input"><input id="setBioPw" type="password" autocomplete="current-password" placeholder="Tu clave maestra"><button type="button" class="btn primary sm" data-set="bio-confirm" style="flex-shrink:0">Confirmar</button></div></label>
+          <label class="f">Confirmá tu clave maestra para activarlo<div class="pass-input"><input id="setBioPw" type="password" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Tu clave maestra"><button type="button" class="btn primary sm" data-set="bio-confirm" style="flex-shrink:0">Confirmar</button></div></label>
           <div id="bioError" class="gate-error" style="text-align:left"></div>
         </div>
       </div>
@@ -531,7 +538,7 @@
   <div class="modal" role="dialog" aria-modal="true">
     <div class="modal-head">
       <h2>Resultado de la importación</h2>
-      <button class="icon-btn" data-set="close-report" title="Cerrar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      <button class="icon-btn" data-set="close-report" title="Cerrar" data-icon="close"></button>
     </div>
     <div class="modal-body" id="importReportBody"></div>
     <div class="modal-foot">
@@ -557,7 +564,6 @@
        · utilidades ............ uid, escapeHtml, normalize, copiar, toast
        · fuerza / generador .... medidor + dadito de contraseñas
        · cifrado ............... deriveKey / encrypt / decrypt
-       · TOTP (2FA) ............ códigos de 6 dígitos
        · guardado .............. save() en cola (no-op si está bloqueada)
        · papelera .............. purga automática + vaciar
        · render ................ pinta la grilla desde `data` (única fuente de verdad)
@@ -569,7 +575,7 @@
        { version:2, defaultEmail:'',
          cards:[ { id, title, url, category, favorite, collapsed,
                    archived, deleted, deletedAt, createdAt,
-                   accounts:[ { id, subtitle, user, password, extra, totp,
+                   accounts:[ { id, subtitle, user, password, extra, (totp: heredado, ya no se usa),
                                 fields:[{id,label,value,secret}],
                                 passwordUpdatedAt, archived, deleted, deletedAt } ] } ] }
 
@@ -580,11 +586,16 @@
          no hace nada → por eso al recargar y bloquear, los cambios no persisten.
        · Orden de tarjetas: favoritas primero (estable) y el resto en el orden
          manual del array `data.cards` (el que define el arrastrar).
-       · Preferencias (bloqueo automático, sus minutos, reorganización automática
-         de columnas, panel de salud) NO forman parte de `data` — no se cifran,
-         viven sueltas en localStorage (variables `autoLockOn`/`autoLockMin`/
-         `autoReorgOn`/`healthPanelOn`, cargadas en `loadPreferences()`), porque
-         son ajustes de la app en esta computadora, no información sensible.
+       · Las preferencias NO forman parte de `data` — no se cifran, viven sueltas
+         en localStorage (son ajustes de este equipo, no información sensible).
+         Los interruptores sí/no están todos en la tabla `PREFS` (sección Ajustes):
+         ahí se define variable, clave, valor por defecto, mensaje y efecto, y de
+         esa tabla salen `loadPreferences()`, `openSettings()` y el guardado.
+       · Íconos repetidos: se definen una vez en `ICON` y el HTML los pide con
+         `data-icon="nombre"`. Persistencia: `store()` / `flag()` en vez de try/catch sueltos.
+       · `clearSession()` es el único lugar que suelta lo que hay en memoria
+         (clave, datos, filtraciones, timers) — lo usan bloquear, reset e importar.
+       · sw.js solo cachea archivos de la propia app (nunca pedidos a otros sitios).
        · `accountHasIssue(a,type)` es la única fuente de verdad para "esta
          cuenta está reutilizada/vieja/débil" — la usan tanto las badges de
          cada tarjeta como el panel de salud, para que nunca queden en
@@ -612,7 +623,6 @@
     star:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1Z"/></svg>',
     link:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>',
     restore:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M3.5 13a9 9 0 1 0 2.6-7.6L3 7"/></svg>',
-    key:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 8.3-8.3"/><path d="m16 5 3 3"/><path d="m19 7 2-2"/></svg>',
     folder:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>',
     box:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="M10 12h4"/></svg>',
     trashBig:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>',
@@ -622,8 +632,11 @@
     chevron:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
     listView:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>',
     gridView:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
-    sort:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18M6 12h12M10 17h4"/></svg>'
+    close:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+    chevR:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
+    chevL:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>'
   };
+  document.querySelectorAll('[data-icon]').forEach(el=>{ el.innerHTML=ICON[el.dataset.icon]; });
 
   // Subir este número cada vez que se suba un cambio visible para el usuario,
   // así el aviso de "se actualizó la app" sabe cuándo mostrarse.
@@ -631,7 +644,7 @@
   // GitHub (no cada vez que se edita el archivo). Se muestra chiquito en el
   // pie de página y al final de Ajustes para ver de un vistazo si ya llegó
   // la última versión. También sirve para el aviso de "se actualizó la app".
-  const APP_VERSION='v2.39';
+  const APP_VERSION='v2.40';
   const KEY_APP_VERSION='mis_contrasenas_version_vista';
   const KEY_VAULT='mis_contrasenas_vault';
   const KEY_OLD='mis_contrasenas_v1';
@@ -668,7 +681,6 @@
   let pwnedByPassword={};
   let pwnedChecking=false, pwnedChecked=false;
   let sortMode='az'; // manual | az | za | newest | oldest — cómo ordenar las tarjetas activas (por defecto, alfabético)
-  let reuseMap={};
   let reuseGroups={};  // password -> [{cardId,accountId,label}] — quién más usa cada contraseña
   const inlineEditIds=new Set();
   const newAccountIds=new Set();
@@ -686,7 +698,7 @@
   let viewMode='cards'; // 'cards' | 'list'
 
   let cryptoKey=null, vaultSaltB64=null, vaultHint='', vault=null;
-  let inactivityTimer=null, totpInterval=null, clipTimer=null, bgLockTimer=null;
+  let inactivityTimer=null, clipTimer=null, bgLockTimer=null;
   // Cuánto tiempo puede estar la app en segundo plano (cambiaste de app, apagaste
   // la pantalla) antes de bloquearse. No es instantáneo a propósito: si fuera
   // 0, cada vez que copiás una contraseña y salís a pegarla en otro lado se
@@ -698,6 +710,9 @@
   /* ---------- utilidades ---------- */
   const $=id=>document.getElementById(id);                 // atajo: $('miId')
   const $$=(sel,root)=>(root||document).querySelector(sel); // atajo: primer match
+  const NOCAP=' autocapitalize="off" autocorrect="off" spellcheck="false"'; // el celu no debe poner mayúsculas ni corregir usuarios/claves
+  const store=(k,v)=>{ try{ localStorage.setItem(k,v); }catch(_){} };                       // guardar sin romper si el navegador lo bloquea
+  const flag=(k,def)=>{ try{ const v=localStorage.getItem(k); return v===null?def:v==='1'; }catch(_){ return def; } }; // leer un sí/no guardado
   function uid(){ return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():'id-'+Date.now()+'-'+Math.random().toString(16).slice(2); }
   function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function normalize(obj){
@@ -733,6 +748,7 @@
   }
   function findCard(id){ return data.cards.find(c=>c.id===id); }
   function findAccount(cardId,accId){ const c=findCard(cardId); return c?c.accounts.find(a=>a.id===accId):null; }
+  function fieldOf(cardId,accId,fid){ const a=findAccount(cardId,accId); return a?a.fields.find(f=>f.id===fid):null; }
 
   async function copyText(t){
     if(!t) return;
@@ -779,13 +795,15 @@
     if(!/[^A-Za-z0-9]/.test(pw)) return 'Le falta al menos un símbolo (ej. ! ? # @ %).';
     return null;
   }
-  function updateStrength(input){
-    const label=input.closest('label.f'); if(!label) return;
-    const fill=label.querySelector('.strength-fill'); const lab=label.querySelector('.strength-label');
+  function paintStrength(fill,lab,pw){
     if(!fill||!lab) return;
-    const r=scorePassword(input.value);
+    const r=scorePassword(pw);
     fill.style.width=r.pct+'%'; fill.style.background=r.color;
     lab.textContent=r.label?('Seguridad: '+r.label):''; lab.style.color=r.color;
+  }
+  function updateStrength(input){
+    const l=input.closest('label.f');
+    if(l) paintStrength(l.querySelector('.strength-fill'),l.querySelector('.strength-label'),input.value);
   }
   /* ---------- generador de contraseña fuerte (el dadito) ---------- */
   function randInt(n){ return crypto.getRandomValues(new Uint32Array(1))[0]%n; }
@@ -850,10 +868,23 @@
      desbloquea la app exactamente igual que si la hubieras tecleado. */
   function bioSupported(){ return !!(window.PublicKeyCredential && navigator.credentials && navigator.credentials.create); }
   function bioEnabled(){ try{ return !!localStorage.getItem(KEY_BIO); }catch(e){ return false; } }
-  function bioDisable(){ try{ localStorage.removeItem(KEY_BIO); }catch(e){} }
+  function bioDisable(){ try{ localStorage.removeItem(KEY_BIO); }catch(_){} }
+  // Le pide el dedo/cara al sensor y devuelve una llave AES derivada de él (solo ese sensor la puede reproducir).
+  async function bioKey(credId,salt,usage){
+    const a=await navigator.credentials.get({publicKey:{
+      challenge:crypto.getRandomValues(new Uint8Array(32)),
+      allowCredentials:[{id:credId, type:'public-key'}],
+      userVerification:'required',
+      extensions:{prf:{eval:{first:salt}}},
+      timeout:60000,
+    }});
+    const prf=a.getClientExtensionResults().prf;
+    if(!prf||!prf.results||!prf.results.first) throw new Error('no-prf');
+    return crypto.subtle.importKey('raw',new Uint8Array(prf.results.first).slice(0,32),'AES-GCM',false,[usage]);
+  }
   async function bioEnroll(pw){
     if(!bioSupported()) throw new Error('unsupported');
-    const bioSalt=crypto.getRandomValues(new Uint8Array(32));
+    const salt=crypto.getRandomValues(new Uint8Array(32));
     const cred=await navigator.credentials.create({publicKey:{
       challenge:crypto.getRandomValues(new Uint8Array(32)),
       rp:{name:'Mis Contraseñas'},
@@ -864,93 +895,15 @@
       timeout:60000,
     }});
     if(!cred) throw new Error('cancelled');
-    const assertion=await navigator.credentials.get({publicKey:{
-      challenge:crypto.getRandomValues(new Uint8Array(32)),
-      allowCredentials:[{id:cred.rawId, type:'public-key'}],
-      userVerification:'required',
-      extensions:{prf:{eval:{first:bioSalt}}},
-      timeout:60000,
-    }});
-    const ext=assertion.getClientExtensionResults();
-    if(!ext.prf||!ext.prf.results||!ext.prf.results.first) throw new Error('no-prf');
-    const prfBytes=new Uint8Array(ext.prf.results.first).slice(0,32);
-    const key=await crypto.subtle.importKey('raw',prfBytes,'AES-GCM',false,['encrypt']);
+    const key=await bioKey(cred.rawId,salt,'encrypt');
     const iv=crypto.getRandomValues(new Uint8Array(12));
     const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,enc.encode(pw));
-    localStorage.setItem(KEY_BIO, JSON.stringify({credId:bufToB64(cred.rawId), salt:bufToB64(bioSalt), iv:bufToB64(iv), ct:bufToB64(ct)}));
+    store(KEY_BIO, JSON.stringify({credId:bufToB64(cred.rawId), salt:bufToB64(salt), iv:bufToB64(iv), ct:bufToB64(ct)}));
   }
   async function bioReveal(){
     const bio=JSON.parse(localStorage.getItem(KEY_BIO));
-    const assertion=await navigator.credentials.get({publicKey:{
-      challenge:crypto.getRandomValues(new Uint8Array(32)),
-      allowCredentials:[{id:b64ToBuf(bio.credId), type:'public-key'}],
-      userVerification:'required',
-      extensions:{prf:{eval:{first:b64ToBuf(bio.salt)}}},
-      timeout:60000,
-    }});
-    const ext=assertion.getClientExtensionResults();
-    if(!ext.prf||!ext.prf.results||!ext.prf.results.first) throw new Error('no-prf');
-    const prfBytes=new Uint8Array(ext.prf.results.first).slice(0,32);
-    const key=await crypto.subtle.importKey('raw',prfBytes,'AES-GCM',false,['decrypt']);
-    const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64ToBuf(bio.iv)},key,b64ToBuf(bio.ct));
-    return dec.decode(pt);
-  }
-
-  /* ---------- TOTP (2FA) ----------
-     Implementa el algoritmo estándar de Google Authenticator/Authy (RFC 6238):
-     a partir de un "secreto" compartido (el texto que te da el sitio al
-     activar el 2FA) y la hora actual redondeada a bloques de 30 segundos,
-     se calcula un HMAC-SHA1 y se recorta a 6 dígitos. Como no depende de
-     ningún servidor, cualquier app que siga el mismo estándar (esta incluida)
-     genera el mismo código que el sitio original, siempre que el reloj de
-     la computadora esté razonablemente sincronizado. */
-  function base32Decode(b32){
-    const A='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-    b32=(b32||'').toUpperCase().replace(/=+$/,'').replace(/[^A-Z2-7]/g,'');
-    let bits=0,val=0; const out=[];
-    for(const ch of b32){ const i=A.indexOf(ch); if(i<0)continue; val=(val<<5)|i; bits+=5; if(bits>=8){ out.push((val>>>(bits-8))&0xff); bits-=8; } }
-    return new Uint8Array(out);
-  }
-  async function totpCode(secret,period){
-    period=period||30;
-    const key=base32Decode(secret);
-    if(key.length===0) return null;
-    let counter=Math.floor(Date.now()/1000/period);
-    const msg=new Uint8Array(8);
-    for(let i=7;i>=0;i--){ msg[i]=counter&0xff; counter=Math.floor(counter/256); }
-    try{
-      const ck=await crypto.subtle.importKey('raw',key,{name:'HMAC',hash:'SHA-1'},false,['sign']);
-      const sig=new Uint8Array(await crypto.subtle.sign('HMAC',ck,msg));
-      const off=sig[sig.length-1]&0x0f;
-      const bin=((sig[off]&0x7f)<<24)|((sig[off+1]&0xff)<<16)|((sig[off+2]&0xff)<<8)|(sig[off+3]&0xff);
-      return (bin%1000000).toString().padStart(6,'0');
-    }catch(e){ return null; }
-  }
-  function startTotp(){ stopTotp(); totpInterval=setInterval(updateTotps,1000); updateTotps(); }
-  function stopTotp(){ if(totpInterval){ clearInterval(totpInterval); totpInterval=null; } totpCodeCache={}; }
-  // El código de 6 dígitos solo cambia una vez cada 30s, pero el contador de
-  // segundos hay que refrescarlo cada segundo. Antes se recalculaba el HMAC
-  // (la parte cara, criptográfica) las 30 veces — acá se guarda en caché por
-  // ventana de 30s y solo se recalcula cuando esa ventana cambió de verdad.
-  let totpCodeCache={}; // accountId -> {period, code}
-  async function updateTotps(){
-    const els=grid.querySelectorAll('.totp');
-    if(els.length===0) return;
-    const nowSec=Math.floor(Date.now()/1000);
-    const period=Math.floor(nowSec/30);
-    const rem=30-(nowSec%30);
-    for(const el of els){
-      const cEl=el.closest('[data-card-id]'), aEl=el.closest('[data-account-id]');
-      if(!cEl||!aEl) continue;
-      const accId=aEl.dataset.accountId;
-      const a=findAccount(cEl.dataset.cardId,accId);
-      if(!a||!a.totp) continue;
-      let cached=totpCodeCache[accId];
-      if(!cached||cached.period!==period){ cached={period, code:await totpCode(a.totp)}; totpCodeCache[accId]=cached; }
-      const dig=el.querySelector('.totp-digits'), sec=el.querySelector('.totp-secs');
-      if(dig) dig.textContent=cached.code?(cached.code.slice(0,3)+' '+cached.code.slice(3)):'inválida';
-      if(sec) sec.textContent=rem+'s';
-    }
+    const key=await bioKey(b64ToBuf(bio.credId),b64ToBuf(bio.salt),'decrypt');
+    return dec.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64ToBuf(bio.iv)},key,b64ToBuf(bio.ct)));
   }
 
   /* ---------- guardado (cifrado, en cola) ---------- */
@@ -964,11 +917,10 @@
 
   /* ---------- papelera: purga automática ---------- */
   function purgeTrash(){
-    const cut=Date.now()-TRASH_DAYS*DAY; let changed=false;
-    const before=data.cards.length;
-    data.cards=data.cards.filter(c=>!(c.deleted&&c.deletedAt&&c.deletedAt<cut));
-    if(data.cards.length!==before) changed=true;
-    data.cards.forEach(c=>{ const b=c.accounts.length; c.accounts=c.accounts.filter(a=>!(a.deleted&&a.deletedAt&&a.deletedAt<cut)); if(c.accounts.length!==b) changed=true; });
+    const cut=Date.now()-TRASH_DAYS*DAY, expired=x=>x.deleted&&x.deletedAt&&x.deletedAt<cut;
+    let changed=false;
+    const n=data.cards.length; data.cards=data.cards.filter(c=>!expired(c)); if(data.cards.length!==n) changed=true;
+    data.cards.forEach(c=>{ const b=c.accounts.length; c.accounts=c.accounts.filter(a=>!expired(a)); if(c.accounts.length!==b) changed=true; });
     if(changed) save();
   }
   function countTrash(){
@@ -1000,9 +952,6 @@
       });
     });
     reuseGroups=groups;
-    const m={};
-    Object.keys(groups).forEach(pw=>{ m[pw]=groups[pw].length; });
-    reuseMap=m;
   }
 
   // Las OTRAS cuentas (no esta misma) que comparten la contraseña de `a`.
@@ -1018,7 +967,7 @@
   // 3 que muestran la etiqueta "Reutilizada" en su tarjeta).
   function accountHasIssue(a,type){
     if(!a.password) return false;
-    if(type==='reuse') return reuseMap[a.password]>1;
+    if(type==='reuse') return (reuseGroups[a.password]||[]).length>1;
     if(type==='old') return !!a.passwordUpdatedAt && (Date.now()-a.passwordUpdatedAt>OLD_PASS_DAYS*DAY);
     if(type==='weak') return scorePassword(a.password).label==='Débil';
     if(type==='pwned') return (pwnedByPassword[a.password]||0)>0;
@@ -1066,7 +1015,7 @@
   }
 
   async function sha1Hex(str){
-    const buf=await crypto.subtle.digest('SHA-1', new TextEncoder().encode(str));
+    const buf=await crypto.subtle.digest('SHA-1', enc.encode(str));
     return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('').toUpperCase();
   }
   // Chequea contraseñas filtradas contra Have I Been Pwned con k-anonimato:
@@ -1132,7 +1081,7 @@
     if(currentView==='active'){ renderCatBar(activeCards); renderHealthPanel(activeCards); els=renderActive(activeCards); }
     else { $('healthPanel').style.display='none'; if(currentView==='archived') els=renderArchived(); else els=renderTrash(); }
     layoutInColumns(els);
-    if(cryptoKey){ updateTotps(); maybeShowBanner(); }
+    if(cryptoKey){ maybeShowBanner(); }
     if(window.scrollY!==scrollY) window.scrollTo(0,scrollY);
   }
 
@@ -1157,6 +1106,9 @@
     lastColCount=n;
     const cols=[], heights=new Array(n).fill(0);
     for(let i=0;i<n;i++){ const c=document.createElement('div'); c.className='grid-col'; cols.push(c); }
+    // Una sola columna (el caso del celu y la vista lista): no hay nada que balancear, así que
+    // no hace falta medir cada tarjeta (medir fuerza al navegador a recalcular todo el layout).
+    if(n===1){ els.forEach(el=>cols[0].appendChild(el)); grid.appendChild(cols[0]); return; }
 
     const gridW=grid.clientWidth||grid.offsetWidth||900;
     const colW=(gridW-(n-1)*GAP)/n;
@@ -1356,9 +1308,6 @@
     // pass
     const pVal=a.password?'••••••••':'<span class="muted">—</span>';
     const pBtns=a.password?btn('reveal',ICON.eye,'Mostrar/ocultar')+btn('copy-pass',ICON.copy,'Copiar contraseña'):'';
-    // totp
-    let totpHtml='';
-    if(a.totp){ totpHtml='<div class="field"><span class="field-label">Código 2FA</span><div class="totp"><span class="totp-digits value mono">······</span><span class="totp-secs">30s</span>'+btn('copy-totp',ICON.copy,'Copiar código')+'</div></div>'; }
     // custom fields
     let cf='';
     (a.fields||[]).forEach(f=>{
@@ -1378,7 +1327,7 @@
     el.innerHTML=head+badgeRow+
       '<div class="field">'+userLabel+'<div class="value-row"><span class="value">'+uVal+'</span>'+uCopy+'</div></div>'+
       '<div class="field"><span class="field-label">Contraseña</span><div class="value-row"><span class="value mono pass-value" data-revealed="0">'+pVal+'</span>'+pBtns+'</div></div>'+
-      totpHtml+cf+extra;
+      cf+extra;
     return el;
   }
 
@@ -1387,8 +1336,8 @@
     el.classList.add('editing');
     el.innerHTML='<div class="ie">'+
       '<label class="f">Subtítulo <span class="opt">(opcional)</span><input class="ie-subtitle" type="text" placeholder="Ej: Cuenta principal"></label>'+
-      '<label class="f">Usuario / correo<input class="ie-user" type="text" autocomplete="off"></label>'+
-      '<label class="f">Contraseña<div class="pass-input"><input class="ie-pass" type="password" autocomplete="new-password"><button class="icon-btn" data-action="gen-pass-inline" title="Generar contraseña fuerte">'+ICON.dice+'</button><button class="icon-btn" data-action="toggle-inline-pass" title="Mostrar/ocultar">'+ICON.eye+'</button></div><div class="strength"><span class="strength-fill"></span></div><div class="strength-label"></div></label>'+
+      '<label class="f">Usuario / correo<input class="ie-user" type="text" autocomplete="off"'+NOCAP+'></label>'+
+      '<label class="f">Contraseña<div class="pass-input"><input class="ie-pass" type="password" autocomplete="new-password"'+NOCAP+'><button class="icon-btn" data-action="gen-pass-inline" title="Generar contraseña fuerte">'+ICON.dice+'</button><button class="icon-btn" data-action="toggle-inline-pass" title="Mostrar/ocultar">'+ICON.eye+'</button></div><div class="strength"><span class="strength-fill"></span></div><div class="strength-label"></div></label>'+
       '<label class="f">Extra <span class="opt">(notas)</span><textarea class="ie-extra" rows="2" placeholder="Notas..."></textarea></label>'+
       '<div class="ie-actions"><button class="btn ghost sm" data-action="cancel-account-inline">Cancelar</button><button class="btn primary sm" data-action="save-account-inline">Guardar</button></div></div>';
     el.querySelector('.ie-subtitle').value=a.subtitle||'';
@@ -1434,7 +1383,7 @@
   function deleteAccountForever(cardId,accId){ const c=findCard(cardId); if(!c)return; if(!confirm('¿Eliminar esta cuenta definitivamente?\n\nEsto no se puede deshacer.'))return; c.accounts=c.accounts.filter(a=>a.id!==accId); save(); render(); toast('Eliminada para siempre'); }
   function setAccountArchived(cardId,accId,v){ const a=findAccount(cardId,accId); if(!a)return; a.archived=v; save(); render(); toast(v?'Cuenta archivada':'Cuenta restaurada'); }
 
-  function addAccountInline(cardId){ const c=findCard(cardId); if(!c)return; const a={id:uid(),subtitle:'',user:'',password:'',extra:'',totp:'',fields:[],passwordUpdatedAt:Date.now(),archived:false,deleted:false,deletedAt:null}; c.accounts.push(a); inlineEditIds.add(a.id); newAccountIds.add(a.id); save(); render(); const i=grid.querySelector('[data-account-id="'+a.id+'"] .ie-subtitle'); if(i)i.focus(); }
+  function addAccountInline(cardId){ const c=findCard(cardId); if(!c)return; const a={id:uid(),subtitle:'',user:'',password:'',extra:'',fields:[],passwordUpdatedAt:Date.now(),archived:false,deleted:false,deletedAt:null}; c.accounts.push(a); inlineEditIds.add(a.id); newAccountIds.add(a.id); save(); render(); const i=grid.querySelector('[data-account-id="'+a.id+'"] .ie-subtitle'); if(i)i.focus(); }
   function startInlineEdit(accId){ inlineEditIds.add(accId); render(); }
   function saveInlineEdit(cardId,accId,el){
     const a=findAccount(cardId,accId); if(!a)return;
@@ -1453,8 +1402,8 @@
     save(); render();
   }
 
-  function toggleReveal(el,b,cardId,accId){ const span=el.querySelector('.pass-value'); const a=findAccount(cardId,accId); if(!a)return; if(span.dataset.revealed==='1'){ span.textContent='••••••••'; span.dataset.revealed='0'; b.innerHTML=ICON.eye; } else { span.textContent=a.password||'—'; span.dataset.revealed='1'; b.innerHTML=ICON.eyeOff; } }
-  function toggleRevealField(el,b,cardId,accId,fid){ const a=findAccount(cardId,accId); if(!a)return; const f=(a.fields||[]).find(x=>x.id===fid); if(!f)return; const span=el.querySelector('.cf-val[data-fid="'+fid+'"]'); if(!span)return; if(span.dataset.revealed==='1'){ span.textContent='••••••••'; span.dataset.revealed='0'; b.innerHTML=ICON.eye; } else { span.textContent=f.value||'—'; span.dataset.revealed='1'; b.innerHTML=ICON.eyeOff; } }
+  // Alterna un valor tapado (••••) / visible, y el ícono del ojito del botón.
+  function toggleMask(span,b,value){ const shown=span.dataset.revealed==='1'; span.textContent=shown?'••••••••':(value||'—'); span.dataset.revealed=shown?'0':'1'; b.innerHTML=shown?ICON.eye:ICON.eyeOff; }
   function togglePassInput(inp,b){ if(inp.type==='password'){ inp.type='text'; b.innerHTML=ICON.eyeOff; } else { inp.type='password'; b.innerHTML=ICON.eye; } }
 
   /* ---------- delegación grilla ---------- */
@@ -1482,12 +1431,11 @@
       case 'restore-account': restoreAccount(cardId,accId); break;
       case 'archive-account': setAccountArchived(cardId,accId,true); break;
       case 'unarchive-account': setAccountArchived(cardId,accId,false); break;
-      case 'reveal': toggleReveal(accEl,b,cardId,accId); break;
-      case 'reveal-field': toggleRevealField(accEl,b,cardId,accId,b.dataset.fid); break;
+      case 'reveal': { const a=findAccount(cardId,accId); if(a) toggleMask(accEl.querySelector('.pass-value'),b,a.password); break; }
+      case 'reveal-field': { const f=fieldOf(cardId,accId,b.dataset.fid), span=accEl.querySelector('.cf-val[data-fid="'+b.dataset.fid+'"]'); if(f&&span) toggleMask(span,b,f.value); break; }
       case 'copy-user': { const a=findAccount(cardId,accId); if(a){copyText(a.user); toast('Usuario copiado');} break; }
       case 'copy-pass': { const a=findAccount(cardId,accId); if(a) copySecret(a.password,'Contraseña'); break; }
-      case 'copy-field': { const a=findAccount(cardId,accId); const f=a&&(a.fields||[]).find(x=>x.id===b.dataset.fid); if(f){ if(f.secret) copySecret(f.value,escapeHtml(f.label||'Campo')); else { copyText(f.value); toast((f.label||'Campo')+' copiado'); } } break; }
-      case 'copy-totp': { const a=findAccount(cardId,accId); if(a&&a.totp){ totpCode(a.totp).then(code=>{ if(code) copySecret(code,'Código 2FA'); }); } break; }
+      case 'copy-field': { const f=fieldOf(cardId,accId,b.dataset.fid); if(f){ if(f.secret) copySecret(f.value,f.label||'Campo'); else { copyText(f.value); toast((f.label||'Campo')+' copiado'); } } break; }
       case 'toggle-inline-pass': togglePassInput(accEl.querySelector('.ie-pass'),b); break;
       case 'gen-pass-inline': fillGenerated(accEl.querySelector('.ie-pass'), accEl.querySelector('[data-action="toggle-inline-pass"]')); break;
     }
@@ -1590,7 +1538,7 @@
 
   function cfRow(f){
     const d=document.createElement('div'); d.className='cf-row';
-    d.innerHTML='<input class="cf-label" type="text" placeholder="Nombre (Ej: PIN)"><input class="cf-value" type="text" placeholder="Valor"><label class="cf-secret"><input class="cf-secret-chk" type="checkbox"> ocultar</label><button type="button" class="icon-btn sm danger" data-action="remove-field" title="Quitar">'+ICON.trash+'</button>';
+    d.innerHTML='<input class="cf-label" type="text" placeholder="Nombre (Ej: PIN)"><input class="cf-value" type="text" placeholder="Valor"'+NOCAP+'><label class="cf-secret"><input class="cf-secret-chk" type="checkbox"> ocultar</label><button type="button" class="icon-btn sm danger" data-action="remove-field" title="Quitar">'+ICON.trash+'</button>';
     if(f){ d.querySelector('.cf-label').value=f.label||''; d.querySelector('.cf-value').value=f.value||''; d.querySelector('.cf-secret-chk').checked=!!f.secret; }
     return d;
   }
@@ -1598,16 +1546,14 @@
     const div=document.createElement('div'); div.className='modal-account'; if(acc&&acc.id)div.dataset.accountId=acc.id;
     div.innerHTML='<div class="modal-account-head"><span class="ma-label">Cuenta</span><button type="button" class="icon-btn sm danger" data-action="remove-block" title="Quitar esta cuenta">'+ICON.trash+'</button></div>'+
       '<label class="f">Subtítulo <span class="opt">(opcional, para diferenciar)</span><input class="m-subtitle" type="text" placeholder="Ej: Cuenta principal, Secundaria..."></label>'+
-      '<label class="f">Usuario / correo<input class="m-user" type="text" placeholder="usuario o email" autocomplete="off"></label>'+
-      '<label class="f">Contraseña<div class="pass-input"><input class="m-pass" type="password" placeholder="contraseña" autocomplete="new-password"><button type="button" class="icon-btn" data-action="gen-pass-modal" title="Generar contraseña fuerte">'+ICON.dice+'</button><button type="button" class="icon-btn" data-action="toggle-modal-pass" title="Mostrar/ocultar">'+ICON.eye+'</button></div><div class="strength"><span class="strength-fill"></span></div><div class="strength-label"></div></label>'+
-      '<label class="f">Clave 2FA <span class="opt">(opcional · el "secreto" para generar códigos)</span><input class="m-totp" type="text" placeholder="Ej: JBSWY3DPEHPK3PXP" autocomplete="off"></label>'+
+      '<label class="f">Usuario / correo<input class="m-user" type="text" placeholder="usuario o email" autocomplete="off"'+NOCAP+'></label>'+
+      '<label class="f">Contraseña<div class="pass-input"><input class="m-pass" type="password" placeholder="contraseña" autocomplete="new-password"'+NOCAP+'><button type="button" class="icon-btn" data-action="gen-pass-modal" title="Generar contraseña fuerte">'+ICON.dice+'</button><button type="button" class="icon-btn" data-action="toggle-modal-pass" title="Mostrar/ocultar">'+ICON.eye+'</button></div><div class="strength"><span class="strength-fill"></span></div><div class="strength-label"></div></label>'+
       '<div class="sub-label">Campos personalizados</div><div class="cf-list"></div><button type="button" class="cf-add" data-action="add-field">'+ICON.plus+' Agregar campo</button>'+
       '<label class="f">Extra <span class="opt">(notas)</span><textarea class="m-extra" rows="2" placeholder="Notas, pregunta de seguridad, etc."></textarea></label>';
     if(acc){
       div.querySelector('.m-subtitle').value=acc.subtitle||'';
       div.querySelector('.m-user').value=acc.user||'';
       div.querySelector('.m-pass').value=acc.password||'';
-      div.querySelector('.m-totp').value=acc.totp||'';
       div.querySelector('.m-extra').value=acc.extra||'';
       const list=div.querySelector('.cf-list');
       (acc.fields||[]).forEach(f=>list.appendChild(cfRow(f)));
@@ -1644,15 +1590,16 @@
       const subtitle=blk.querySelector('.m-subtitle').value.trim();
       const user=blk.querySelector('.m-user').value;
       const password=blk.querySelector('.m-pass').value;
-      const totp=blk.querySelector('.m-totp').value.trim();
       const extra=blk.querySelector('.m-extra').value;
       const fields=[];
       blk.querySelectorAll('.cf-row').forEach(r=>{ const l=r.querySelector('.cf-label').value.trim(); const v=r.querySelector('.cf-value').value; const s=r.querySelector('.cf-secret-chk').checked; if(l||v) fields.push({id:uid(),label:l,value:v,secret:s}); });
-      if(!subtitle&&!user&&!password&&!extra&&!totp&&fields.length===0) return;
+      if(!subtitle&&!user&&!password&&!extra&&fields.length===0) return;
       const oldId=blk.dataset.accountId;
       const old=existing&&oldId?existing.accounts.find(a=>a.id===oldId):null;
       const pwChanged=!old||old.password!==password;
-      accounts.push({id:oldId||uid(),subtitle,user,password,extra,totp,fields,passwordUpdatedAt:pwChanged?Date.now():old.passwordUpdatedAt,archived:false,deleted:false,deletedAt:null});
+      // El 2FA ya no se edita desde la app, pero si una cuenta vieja tenía un secreto guardado se conserva (para no perder datos sin avisar).
+      const legacyTotp=old&&old.totp?{totp:old.totp}:{};
+      accounts.push(Object.assign({id:oldId||uid(),subtitle,user,password,extra,fields,passwordUpdatedAt:pwChanged?Date.now():old.passwordUpdatedAt,archived:false,deleted:false,deletedAt:null},legacyTotp));
     });
     if(modalMode==='editCard'){
       const card=existing;
@@ -1719,9 +1666,9 @@
       let obj; try{ obj=JSON.parse(r.result); }catch(e){ alert('El archivo no es válido.'); return; }
       if(obj&&obj.ct&&obj.salt&&obj.iv){
         if(!confirm('Vas a reemplazar tus datos por los de esta copia cifrada.\nDespués vas a desbloquear con la contraseña de esa copia. ¿Continuar?')) return;
-        localStorage.setItem(KEY_VAULT,JSON.stringify(obj)); localStorage.setItem(KEY_FAILS,'0');
-        vault=obj; cryptoKey=null; data={version:2,cards:[]}; inlineEditIds.clear(); newAccountIds.clear();
-        stopTotp(); clearTimeout(inactivityTimer);
+        store(KEY_VAULT,JSON.stringify(obj)); setFails(0);
+        bioDisable(); // la huella guardada era de la clave de la bóveda anterior
+        vault=obj; clearSession();
         showLock(); toast('Copia importada. Desbloqueá con su contraseña.');
       } else if(obj&&Array.isArray(obj.cards)){
         if(!cryptoKey){ alert('Este archivo no está cifrado, así que primero necesitás una clave maestra para protegerlo.\n\nCreá tu clave acá abajo y después importalo desde el botón de Importar (⬆) de arriba de todo.'); return; }
@@ -1827,7 +1774,7 @@
           continue;
         }
         data.cards.unshift({id:uid(), title:row.title, url:row.url, category:'', favorite:false, collapsed:false, archived:false, deleted:false, deletedAt:null, createdAt:Date.now(),
-          accounts:[{id:uid(), subtitle:'', user:row.user, password:row.password, extra:row.extra, totp:'', fields:[], passwordUpdatedAt:Date.now(), archived:false, deleted:false, deletedAt:null}]});
+          accounts:[{id:uid(), subtitle:'', user:row.user, password:row.password, extra:row.extra, fields:[], passwordUpdatedAt:Date.now(), archived:false, deleted:false, deletedAt:null}]});
         added.push(row);
       }
       if(added.length) save();
@@ -1890,7 +1837,7 @@
   function hideBanner(){ bannerDismissed=true; $('backupBanner').style.display='none'; }
 
   /* ---------- tema ---------- */
-  function applyTheme(t){ document.documentElement.setAttribute('data-theme',t); const b=$('themeBtn'); if(b)b.innerHTML=t==='dark'?ICON.sun:ICON.moon; try{localStorage.setItem(KEY_THEME,t);}catch(e){} }
+  function applyTheme(t){ document.documentElement.setAttribute('data-theme',t); const b=$('themeBtn'); if(b)b.innerHTML=t==='dark'?ICON.sun:ICON.moon; store(KEY_THEME,t); }
 
   // Vista "lista": las mismas tarjetas, pero forzadas a una sola columna y con
   // estilo más chato/compacto (ver CSS .grid.list-mode) — para quien tenga
@@ -1900,7 +1847,7 @@
     const b=$('viewModeBtn');
     if(b){ b.innerHTML=m==='list'?ICON.gridView:ICON.listView; b.title=m==='list'?'Cambiar a vista de tarjetas':'Cambiar a vista lista'; }
     grid.classList.toggle('list-mode', m==='list');
-    try{ localStorage.setItem(KEY_VIEW_MODE,m); }catch(e){}
+    store(KEY_VIEW_MODE,m);
   }
 
   /* ---------- ajustes ---------- */
@@ -1913,17 +1860,13 @@
     $('setDefaultEmail').value=data.defaultEmail||'';
     $('setEmailMsg').textContent='';
     $('setHint').value=vaultHint||'';
-    $('setAutoLockOn').checked=autoLockOn;
+    Object.keys(PREFS).forEach(id=>{ $(id).checked=PREFS[id].get(); });
     $('setAutoLockMin').value=autoLockMin;
     updateAutoLockMinRowVisibility();
-    $('setLockOnBg').checked=lockOnBgOn;
-    $('setAutoReorg').checked=autoReorgOn;
-    $('setHealthPanel').checked=healthPanelOn;
     // Si el usuario le sacó el permiso de notificaciones desde el navegador
     // (no desde acá), reflejarlo apagado aunque la preferencia guardada diga que sí.
     $('setNotifyUpdates').checked = notifyUpdatesOn && (typeof Notification==='undefined' || Notification.permission==='granted');
     $('exportPickerRow').style.display = window.showSaveFilePicker ? 'flex' : 'none';
-    $('setExportPicker').checked = exportPickerOn;
     $('bioRow').style.display = bioSupported() ? 'flex' : 'none';
     $('setBioUnlock').checked = bioEnabled();
     $('bioConfirmRow').style.display='none';
@@ -1996,70 +1939,36 @@
     else if(a==='bio-confirm') confirmBioEnroll();
     else if(b.dataset.nav) showSettingsPanel(b.dataset.nav);
   });
-  // Las preferencias (switches + minutos) se guardan al toque, sin botón "Guardar" —
-  // son ajustes chicos, no algo que uno quiera "cancelar" como la clave maestra.
+  // Interruptores de Preferencias: id del switch -> {variable, clave guardada, valor por defecto,
+  // mensajes [al prender, al apagar], efecto extra}. Agregar una preferencia nueva = una fila acá
+  // + su switch en el HTML. Se guardan al toque (sin botón "Guardar").
+  const PREFS={
+    setAutoLockOn:{key:KEY_AUTOLOCK_ON, def:true, get:()=>autoLockOn, set:v=>{autoLockOn=v;}, msg:['Bloqueo automático activado','Bloqueo automático desactivado'], after:()=>{ updateAutoLockMinRowVisibility(); resetInactivity(); }},
+    setLockOnBg:{key:KEY_LOCK_BG, def:true, get:()=>lockOnBgOn, set:v=>{lockOnBgOn=v;}, msg:['Bloqueo al salir activado','Bloqueo al salir desactivado']},
+    setAutoReorg:{key:KEY_AUTOREORG, def:true, get:()=>autoReorgOn, set:v=>{autoReorgOn=v;}, msg:['Reorganización automática activada','Reorganización automática desactivada']},
+    setHealthPanel:{key:KEY_HEALTH_PANEL, def:true, get:()=>healthPanelOn, set:v=>{healthPanelOn=v;}, msg:['Panel de salud activado','Panel de salud desactivado'], after:()=>{ if(!healthPanelOn) issueFilter=''; if(currentView==='active') render(); }},
+    setExportPicker:{key:KEY_EXPORT_PICKER, def:false, get:()=>exportPickerOn, set:v=>{exportPickerOn=v;}, msg:['Ahora vas a poder elegir la carpeta al exportar','Vuelve a exportar directo a Descargas']}
+  };
+  function setNotify(on){ notifyUpdatesOn=on; store(KEY_NOTIFY_UPDATES,on?'1':'0'); }
   settingsOverlay.addEventListener('change',e=>{
-    const t=e.target;
-    if(t.id==='setAutoLockOn'){
-      autoLockOn=t.checked;
-      try{ localStorage.setItem(KEY_AUTOLOCK_ON, autoLockOn?'1':'0'); }catch(_){}
-      updateAutoLockMinRowVisibility(); resetInactivity();
-      toast(autoLockOn?'Bloqueo automático activado':'Bloqueo automático desactivado');
+    const t=e.target, p=PREFS[t.id];
+    if(p){
+      p.set(t.checked); store(p.key,t.checked?'1':'0');
+      if(p.after) p.after();
+      toast(p.msg[t.checked?0:1]);
     } else if(t.id==='setAutoLockMin'){
-      let v=parseInt(t.value,10);
-      if(!Number.isFinite(v)||v<1) v=1; if(v>180) v=180;
-      t.value=v; autoLockMin=v;
-      try{ localStorage.setItem(KEY_AUTOLOCK_MIN,String(v)); }catch(_){}
+      const v=Math.min(180,Math.max(1,parseInt(t.value,10)||1));
+      t.value=v; autoLockMin=v; store(KEY_AUTOLOCK_MIN,String(v));
       resetInactivity();
       toast('Bloqueo automático: '+v+' min');
-    } else if(t.id==='setLockOnBg'){
-      lockOnBgOn=t.checked;
-      try{ localStorage.setItem(KEY_LOCK_BG, lockOnBgOn?'1':'0'); }catch(_){}
-      toast(lockOnBgOn?'Bloqueo al salir activado':'Bloqueo al salir desactivado');
-    } else if(t.id==='setExportPicker'){
-      exportPickerOn=t.checked;
-      try{ localStorage.setItem(KEY_EXPORT_PICKER, exportPickerOn?'1':'0'); }catch(_){}
-      toast(exportPickerOn?'Ahora vas a poder elegir la carpeta al exportar':'Vuelve a exportar directo a Descargas');
-    } else if(t.id==='setAutoReorg'){
-      autoReorgOn=t.checked;
-      try{ localStorage.setItem(KEY_AUTOREORG, autoReorgOn?'1':'0'); }catch(_){}
-      toast(autoReorgOn?'Reorganización automática activada':'Reorganización automática desactivada');
-    } else if(t.id==='setHealthPanel'){
-      healthPanelOn=t.checked;
-      try{ localStorage.setItem(KEY_HEALTH_PANEL, healthPanelOn?'1':'0'); }catch(_){}
-      if(!healthPanelOn) issueFilter=''; // si se oculta el panel, no dejamos un filtro invisible activo
-      if(currentView==='active') render();
-      toast(healthPanelOn?'Panel de salud activado':'Panel de salud desactivado');
     } else if(t.id==='setNotifyUpdates'){
-      if(!t.checked){
-        notifyUpdatesOn=false;
-        try{ localStorage.setItem(KEY_NOTIFY_UPDATES,'0'); }catch(_){}
-        toast('Avisos de actualización desactivados');
-        return;
-      }
-      if(typeof Notification==='undefined'){
-        t.checked=false; toast('Tu navegador no soporta notificaciones'); return;
-      }
-      if(Notification.permission==='granted'){
-        notifyUpdatesOn=true;
-        try{ localStorage.setItem(KEY_NOTIFY_UPDATES,'1'); }catch(_){}
-        toast('Avisos de actualización activados');
-      } else if(Notification.permission==='denied'){
-        t.checked=false;
-        toast('Bloqueaste las notificaciones para esta página. Activalas desde los ajustes del navegador.');
-      } else {
-        Notification.requestPermission().then(perm=>{
-          if(perm==='granted'){
-            notifyUpdatesOn=true;
-            try{ localStorage.setItem(KEY_NOTIFY_UPDATES,'1'); }catch(_){}
-            toast('Avisos de actualización activados');
-          } else {
-            t.checked=false; notifyUpdatesOn=false;
-            try{ localStorage.setItem(KEY_NOTIFY_UPDATES,'0'); }catch(_){}
-            toast('No se activaron: hace falta el permiso de notificaciones');
-          }
-        });
-      }
+      if(!t.checked){ setNotify(false); toast('Avisos de actualización desactivados'); return; }
+      if(typeof Notification==='undefined'){ t.checked=false; toast('Tu navegador no soporta notificaciones'); return; }
+      if(Notification.permission==='denied'){ t.checked=false; toast('Bloqueaste las notificaciones para esta página. Activalas desde los ajustes del navegador.'); return; }
+      (Notification.permission==='granted'?Promise.resolve('granted'):Notification.requestPermission()).then(perm=>{
+        const on=perm==='granted'; setNotify(on); t.checked=on;
+        toast(on?'Avisos de actualización activados':'No se activaron: hace falta el permiso de notificaciones');
+      });
     } else if(t.id==='setBioUnlock'){
       if(!t.checked){
         bioDisable();
@@ -2091,17 +2000,26 @@
     } finally { btn.disabled=false; btn.textContent='Confirmar'; }
   }
   settingsOverlay.addEventListener('input',e=>{ if(e.target.id==='setNew') updateStrength(e.target); });
-  settingsOverlay.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeSettings();return;} if(e.key==='Enter'){ e.preventDefault(); if(e.target&&e.target.id==='setDefaultEmail') saveDefaultEmail(); else if(e.target&&e.target.id!=='setAutoLockMin') saveSettings(); } });
+  // Enter en un campo de texto confirma ESE panel (en botones y switches no se toca, para que Enter siga activándolos).
+  settingsOverlay.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){ closeSettings(); return; }
+    if(e.key!=='Enter'||e.target.type==='checkbox'||e.target.tagName!=='INPUT') return;
+    e.preventDefault();
+    const id=e.target.id;
+    if(id==='setDefaultEmail') saveDefaultEmail();
+    else if(id==='setBioPw') confirmBioEnroll();
+    else if(id!=='setAutoLockMin') saveSettings();
+  });
 
   /* ---------- pantalla bloqueo / setup ---------- */
   const gate=$('gate');
   const appEl=$('app');
   function getFails(){ return parseInt(localStorage.getItem(KEY_FAILS)||'0',10)||0; }
-  function setFails(n){ try{ localStorage.setItem(KEY_FAILS,String(n)); }catch(e){} }
+  function setFails(n){ store(KEY_FAILS,String(n)); }
   function gateError(m){ const e=gate.querySelector('#gerror'); if(e)e.textContent=m||''; }
 
-  function setupHTML(){ return '<div class="gate-card"><div class="gate-logo">'+ICON.shield+'</div><h1>Creá tu contraseña maestra</h1><p class="gate-sub">Con esta clave se cifra todo. Te la vamos a pedir cada vez que abras la app.</p><div class="gate-field"><label>Contraseña maestra</label><div class="gate-pass"><input id="gpw" class="gate-pw" type="password" placeholder="Elegí una clave" autocomplete="new-password"><button class="icon-btn" data-gate="toggle-pw" type="button">'+ICON.eye+'</button></div><div class="strength"><span class="strength-fill" id="gStrengthFill"></span></div><div class="strength-label" id="gStrengthLabel"></div><small class="gate-note">Mínimo 8 caracteres, con mayúsculas, minúsculas, números y símbolos (ej. ! ? # @ %).</small></div><div class="gate-field"><label>Repetí la contraseña</label><input id="gpw2" class="gate-pw" type="password" placeholder="La misma de arriba" autocomplete="new-password"></div><div class="gate-field"><label>Pista (opcional)</label><input id="ghint" type="text" placeholder="Un recordatorio para vos" autocomplete="off"><small class="gate-note">No escribas acá la contraseña. Es solo una ayuda.</small></div><div id="gerror" class="gate-error"></div><button class="btn primary gate-btn" data-gate="setup-submit">Crear y entrar</button><div class="gate-warn">'+ICON.alert+' <span>Anotá tu contraseña en un lugar seguro. Si te la olvidás, <b>no se puede recuperar</b>: solo vas a poder restablecer la app y empezar de cero.</span></div><div class="gate-reset"><p>¿Ya usás esta app en otro dispositivo? Si tenés una copia de seguridad exportada desde ahí, importala directo — no hace falta crear una clave nueva, vas a desbloquear con la misma de siempre.</p><button class="btn ghost gate-btn" type="button" data-gate="import-backup">Importar copia de seguridad</button></div></div>'; }
-  function lockHTML(hint){ return '<div class="gate-card"><div class="gate-logo">'+ICON.lockBig+'</div><h1>Mis Contraseñas</h1><p class="gate-sub">Ingresá tu contraseña maestra para entrar.</p><div class="gate-field"><div class="gate-pass"><input id="gpw" class="gate-pw" type="password" placeholder="Contraseña maestra" autocomplete="current-password"><button class="icon-btn" data-gate="toggle-pw" type="button">'+ICON.eye+'</button></div></div>'+(hint?'<div class="gate-hint">'+ICON.bulb+' <span><b>Pista:</b> '+escapeHtml(hint)+'</span></div>':'')+'<div id="gerror" class="gate-error"></div><button class="btn primary gate-btn" id="gunlock" data-gate="unlock">Desbloquear</button>'+(bioEnabled()&&bioSupported()?'<button class="btn ghost gate-btn" type="button" id="gbio" data-gate="bio-unlock">👆 Usar huella / Face ID</button>':'')+'<div id="greset" class="gate-reset" style="display:none"><p>¿Te olvidaste la contraseña? Podés restablecer la app y empezar de cero (se borran los datos guardados).</p><button class="btn danger gate-btn" data-gate="reset">Restablecer de fábrica</button></div></div>'; }
+  function setupHTML(){ return '<div class="gate-card"><div class="gate-logo">'+ICON.shield+'</div><h1>Creá tu contraseña maestra</h1><p class="gate-sub">Con esta clave se cifra todo. Te la vamos a pedir cada vez que abras la app.</p><div class="gate-reset" style="margin:0 0 18px; padding:0 0 18px; border-top:none; border-bottom:1px solid var(--border)"><p>¿Ya usás esta app en otro dispositivo? Importá tu copia de seguridad y desbloqueá con la clave de siempre.</p><button class="btn ghost gate-btn" type="button" data-gate="import-backup" style="margin-top:0">Importar copia de seguridad</button></div><div class="gate-field"><label>Contraseña maestra</label><div class="gate-pass"><input id="gpw" class="gate-pw" type="password" placeholder="Elegí una clave" autocomplete="new-password"'+NOCAP+'><button class="icon-btn" data-gate="toggle-pw" type="button">'+ICON.eye+'</button></div><div class="strength"><span class="strength-fill" id="gStrengthFill"></span></div><div class="strength-label" id="gStrengthLabel"></div><small class="gate-note">Mínimo 8 caracteres, con mayúsculas, minúsculas, números y símbolos (ej. ! ? # @ %).</small></div><div class="gate-field"><label>Repetí la contraseña</label><input id="gpw2" class="gate-pw" type="password" placeholder="La misma de arriba" autocomplete="new-password"'+NOCAP+'></div><div class="gate-field"><label>Pista (opcional)</label><input id="ghint" type="text" placeholder="Un recordatorio para vos" autocomplete="off"><small class="gate-note">No escribas acá la contraseña. Es solo una ayuda.</small></div><div id="gerror" class="gate-error"></div><button class="btn primary gate-btn" data-gate="setup-submit">Crear y entrar</button><div class="gate-warn">'+ICON.alert+' <span>Anotá tu contraseña en un lugar seguro. Si te la olvidás, <b>no se puede recuperar</b>: solo vas a poder restablecer la app y empezar de cero.</span></div></div>'; }
+  function lockHTML(hint){ return '<div class="gate-card"><div class="gate-logo">'+ICON.lockBig+'</div><h1>Mis Contraseñas</h1><p class="gate-sub">Ingresá tu contraseña maestra para entrar.</p><div class="gate-field"><div class="gate-pass"><input id="gpw" class="gate-pw" type="password" placeholder="Contraseña maestra" autocomplete="current-password"'+NOCAP+'><button class="icon-btn" data-gate="toggle-pw" type="button">'+ICON.eye+'</button></div></div>'+(hint?'<div class="gate-hint">'+ICON.bulb+' <span><b>Pista:</b> '+escapeHtml(hint)+'</span></div>':'')+'<div id="gerror" class="gate-error"></div><button class="btn primary gate-btn" id="gunlock" data-gate="unlock">Desbloquear</button>'+(bioEnabled()&&bioSupported()?'<button class="btn ghost gate-btn" type="button" id="gbio" data-gate="bio-unlock">👆 Usar huella / Face ID</button>':'')+'<div id="greset" class="gate-reset" style="display:none"><p>¿Te olvidaste la contraseña? Podés restablecer la app y empezar de cero (se borran los datos guardados).</p><button class="btn danger gate-btn" data-gate="reset">Restablecer de fábrica</button></div></div>'; }
   function unsupportedHTML(){ return '<div class="gate-card"><div class="gate-logo">'+ICON.alert+'</div><h1>No se puede cifrar aquí</h1><p class="gate-sub">Tu navegador no habilitó el cifrado en este contexto. Abrí <b>index.html</b> con Chrome, Edge o Firefox (doble clic).</p></div>'; }
 
   function showSetup(){ appEl.style.display='none'; gate.style.display='flex'; gate.innerHTML=setupHTML(); setTimeout(()=>{const i=gate.querySelector('#gpw'); if(i)i.focus();},50); }
@@ -2116,7 +2034,7 @@
     appEl.style.display=''; currentView='active'; searchQuery=''; categoryFilter=''; bannerDismissed=false;
     inlineEditIds.clear(); newAccountIds.clear();
     const s=$('search'); if(s)s.value=''; $('clearSearch').style.display='none';
-    purgeTrash(); render(); maybeShowBanner(); updateWeakMasterBanner(); startTotp(); resetInactivity();
+    purgeTrash(); render(); updateWeakMasterBanner(); resetInactivity();
   }
   function getExistingPlaintext(){ try{ const raw=localStorage.getItem(KEY_OLD); if(raw) return normalize(JSON.parse(raw)); }catch(e){} return {version:2,cards:[]}; }
 
@@ -2171,12 +2089,12 @@
     if(typed===null) return false;
     if(typed.trim().toUpperCase()!=='CONFIRMAR'){ alert('No se restableció nada.\n\nEl texto no coincidía con CONFIRMAR.'); return false; }
     try{ localStorage.removeItem(KEY_VAULT); localStorage.removeItem(KEY_OLD); localStorage.removeItem(KEY_FAILS); localStorage.removeItem(KEY_EXPORT); }catch(e){}
-    bioDisable();
-    vault=null; cryptoKey=null; data={version:2,cards:[]}; inlineEditIds.clear(); newAccountIds.clear();
-    stopTotp(); clearTimeout(inactivityTimer); showSetup();
+    bioDisable(); vault=null; clearSession(); showSetup();
     return true;
   }
-  function lockNow(){ cryptoKey=null; data={version:2,cards:[]}; inlineEditIds.clear(); newAccountIds.clear(); pwnedByPassword={}; pwnedChecked=false; stopTotp(); clearTimeout(inactivityTimer); clearTimeout(bgLockTimer); showLock(); }
+  // Suelta todo lo que haya en memoria de la sesión (clave, datos, resultado de filtraciones, timers).
+  function clearSession(){ cryptoKey=null; data={version:2,cards:[]}; inlineEditIds.clear(); newAccountIds.clear(); pwnedByPassword={}; pwnedChecked=false; clearTimeout(inactivityTimer); clearTimeout(bgLockTimer); }
+  function lockNow(){ clearSession(); showLock(); }
 
   gate.addEventListener('click',e=>{
     const b=e.target.closest('[data-gate]'); if(!b)return;
@@ -2189,13 +2107,7 @@
     else if(a==='toggle-pw'){ const inputs=gate.querySelectorAll('.gate-pw'); const show=inputs[0]&&inputs[0].type==='password'; inputs.forEach(i=>i.type=show?'text':'password'); b.innerHTML=show?ICON.eyeOff:ICON.eye; }
   });
   gate.addEventListener('keydown',e=>{ if(e.key!=='Enter')return; if(gate.querySelector('[data-gate="setup-submit"]')) doSetup(); else if(gate.querySelector('[data-gate="unlock"]')) doUnlock(); });
-  gate.addEventListener('input',e=>{
-    if(e.target.id!=='gpw') return;
-    const fill=$('gStrengthFill'), lab=$('gStrengthLabel'); if(!fill||!lab) return;
-    const r=scorePassword(e.target.value);
-    fill.style.width=r.pct+'%'; fill.style.background=r.color;
-    lab.textContent=r.label?('Seguridad: '+r.label):''; lab.style.color=r.color;
-  });
+  gate.addEventListener('input',e=>{ if(e.target.id==='gpw') paintStrength($('gStrengthFill'),$('gStrengthLabel'),e.target.value); });
 
   /* ---------- bloqueo automático por inactividad ---------- */
   function resetInactivity(){
@@ -2204,7 +2116,9 @@
     const ms=Math.max(1,autoLockMin)*60*1000;
     inactivityTimer=setTimeout(()=>{ if(cryptoKey) lockNow(); }, ms);
   }
-  ['click','keydown','mousemove','touchstart','scroll'].forEach(ev=>document.addEventListener(ev,resetInactivity,{passive:true}));
+  // mousemove/scroll disparan decenas de veces por segundo: reiniciar el timer una vez por segundo alcanza.
+  let lastActivity=0;
+  ['click','keydown','mousemove','touchstart','scroll'].forEach(ev=>document.addEventListener(ev,()=>{ const n=Date.now(); if(n-lastActivity>1000){ lastActivity=n; resetInactivity(); } },{passive:true}));
 
   /* ---------- bloqueo al mandar la app a segundo plano ---------- */
   // "visibilitychange" avisa cuando cambiás de app/pestaña o apagás la
@@ -2223,14 +2137,13 @@
 
   /* ---------- encabezado ---------- */
   const searchEl=$('search'), clearEl=$('clearSearch');
-  searchEl.addEventListener('input',e=>{ searchQuery=e.target.value.trim().toLowerCase(); clearEl.style.display=e.target.value?'block':'none'; render(); });
-  clearEl.addEventListener('click',()=>{ searchEl.value=''; searchQuery=''; clearEl.style.display='none'; render(); searchEl.focus(); });
+  let searchTimer;   // espera a que termines de tipear (120 ms) antes de volver a dibujar todo: en el celu se nota
+  searchEl.addEventListener('input',e=>{ clearEl.style.display=e.target.value?'block':'none'; clearTimeout(searchTimer); searchTimer=setTimeout(()=>{ searchQuery=e.target.value.trim().toLowerCase(); render(); },120); });
+  clearEl.addEventListener('click',()=>{ clearTimeout(searchTimer); searchEl.value=''; searchQuery=''; clearEl.style.display='none'; render(); searchEl.focus(); });
   document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{ currentView=t.dataset.view; render(); }));
   $('newBtn').addEventListener('click',()=>openModal('create'));
   $('exportBtn').addEventListener('click',exportData);
   $('importBtn').addEventListener('click',()=>importInput.click());
-  $('settingsBtn').innerHTML=ICON.gear;
-  $('lockBtn').innerHTML=ICON.lockSm;
   $('settingsBtn').addEventListener('click',openSettings);
   $('lockBtn').addEventListener('click',lockNow);
   $('themeBtn').addEventListener('click',()=>{ const cur=document.documentElement.getAttribute('data-theme'); applyTheme(cur==='dark'?'light':'dark'); });
@@ -2238,8 +2151,7 @@
   function updateSortUI(){ document.querySelectorAll('.sort-opt').forEach(b=>b.classList.toggle('active',b.dataset.sort===sortMode)); }
   $('sideSort').addEventListener('click',e=>{
     const b=e.target.closest('[data-sort]'); if(!b)return;
-    sortMode=b.dataset.sort;
-    try{ localStorage.setItem(KEY_SORT_MODE,sortMode); }catch(_){}
+    sortMode=b.dataset.sort; store(KEY_SORT_MODE,sortMode);
     updateSortUI();
     render();
   });
@@ -2255,21 +2167,15 @@
   // Lee las preferencias configurables de localStorage, con valores por
   // defecto sensatos si todavía no se guardó nada (primera vez que se abre).
   function loadPreferences(){
-    try{ autoLockOn = localStorage.getItem(KEY_AUTOLOCK_ON)!=='0'; }catch(e){}
+    Object.values(PREFS).forEach(p=>p.set(flag(p.key,p.def)));
+    notifyUpdatesOn=flag(KEY_NOTIFY_UPDATES,false);
     try{
       const m=parseInt(localStorage.getItem(KEY_AUTOLOCK_MIN),10);
-      if(Number.isFinite(m)&&m>=1&&m<=180) autoLockMin=m;
-    }catch(e){}
-    try{ autoReorgOn = localStorage.getItem(KEY_AUTOREORG)!=='0'; }catch(e){}
-    try{ lockOnBgOn = localStorage.getItem(KEY_LOCK_BG)!=='0'; }catch(e){}
-    try{ exportPickerOn = localStorage.getItem(KEY_EXPORT_PICKER)==='1'; }catch(e){}
-    try{ healthPanelOn = localStorage.getItem(KEY_HEALTH_PANEL)!=='0'; }catch(e){}
-    try{ notifyUpdatesOn = localStorage.getItem(KEY_NOTIFY_UPDATES)==='1'; }catch(e){}
-    try{ viewMode = localStorage.getItem(KEY_VIEW_MODE)==='list'?'list':'cards'; }catch(e){}
-    try{
+      if(m>=1&&m<=180) autoLockMin=m;
       const sm=localStorage.getItem(KEY_SORT_MODE);
       if(['manual','az','za','newest','oldest'].includes(sm)) sortMode=sm;
-    }catch(e){}
+      if(localStorage.getItem(KEY_VIEW_MODE)==='list') viewMode='list';
+    }catch(_){}
   }
 
   /* ---------- inicio ---------- */
@@ -2298,19 +2204,15 @@
       navigator.serviceWorker.register('sw.js').catch(()=>{});
     });
   }
-  const uReload=$('updateReload'), uClose=$('updateClose');
-  if(uReload) uReload.addEventListener('click',()=>{
-    $('updateBanner').style.display='none';
-    openSettings(); showSettingsPanel('prefs');
-  });
-  if(uClose) uClose.addEventListener('click',()=>{ const b=$('updateBanner'); if(b) b.style.display='none'; });
+  $('updateReload').addEventListener('click',()=>{ $('updateBanner').style.display='none'; openSettings(); showSettingsPanel('prefs'); });
+  $('updateClose').addEventListener('click',()=>{ $('updateBanner').style.display='none'; });
   // Aviso de "se actualizó la app": compara un número de versión fijo contra
   // el último que vio este navegador (guardado en localStorage). Como el
   // service worker sirve siempre la versión más nueva de index.html cuando
   // hay internet (ver sw.js), lo único que hace falta para saber si "cambió
   // algo" es comparar ese número — no hace falta tocar el service worker.
   // Acordarse de subir APP_VERSION cuando se suba un cambio visible para Bruno.
-  document.querySelectorAll('#footerVersion, #settingsVersion').forEach(el=>{ if(el) el.textContent=APP_VERSION; });
+  document.querySelectorAll('#footerVersion, #settingsVersion').forEach(el=>{ el.textContent=APP_VERSION; });
   try{
     const last=localStorage.getItem(KEY_APP_VERSION);
     if(last && last!==APP_VERSION){
@@ -2326,7 +2228,7 @@
           try{ new Notification('Nueva actualización 🔒',{body,icon:'icon-192.png'}); }catch(_){}
         }
       } else {
-        const b=$('updateBanner'); if(b) b.style.display='block';
+        $('updateBanner').style.display='block';
       }
     }
     localStorage.setItem(KEY_APP_VERSION, APP_VERSION);
